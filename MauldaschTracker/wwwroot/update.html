@@ -33,7 +33,7 @@
                         if (collection.parent == parentItem?.id) {
                             const item = {
                                 id: collection.id,
-                                name: collection.name,
+                                name: `${collection.name} (${collection.items} Items)`,
                                 checked: ko.observable(false),
                                 visible: ko.computed(() => parentItem == null || !parentItem.checked())
                             };
@@ -110,7 +110,7 @@
                             longitude: position.coords.longitude
                         };
 
-                        const response = await fetch('/api/SetLocation', {
+                        const response = await fetch('/api/SetPosition', {
                             method: 'POST',
                             headers: {
                                 "Content-Type": "application/json",
@@ -139,6 +139,7 @@
                 init(collections) {
                     //this.status('');
 
+                    this.itemIds('');
                     this.collectionSourceTree(this.getSourceTree(collections, null));
 
                     let targetTree = this.getTargetTree([
@@ -155,7 +156,7 @@
                         if (collection.parent == parentItem?.id) {
                             const item = {
                                 id: collection.id,
-                                name: collection.name,
+                                name: `${collection.name} (${collection.items} Items)`,
                                 checked: ko.observable(false),
                                 visible: ko.computed(() => parentItem == null || !parentItem.checked())
                             };
@@ -227,7 +228,7 @@
                             parentCollection: targetId == '' ? null : targetId
                         };
 
-                        const response = await fetch('/api/SetLocation', {
+                        const response = await fetch('/api/SetCollection', {
                             method: 'POST',
                             headers: {
                                 "Content-Type": "application/json",
@@ -380,7 +381,7 @@
                 <tr>
                     <td>
                         <ul data-bind="template: { name: 'collectionSourceTreeElement', foreach: $data.collectionSourceTree }"></ul>
-                        <label>Glump (IDs/URLs)<br><textarea rows="20" cols="50" data-bind="value: itemIds"></textarea></label>
+                        <label>Glump (IDs/URLs)<br><textarea rows="10" cols="50" data-bind="value: itemIds"></textarea></label>
                     </td>
                     <td>
                         <button data-bind="click: () => updatePositionOnce(), visible: locationWatch() == null">Oi mol setza!</button><br>
@@ -388,8 +389,7 @@
                         <button data-bind="click: () => stopPositionTracking(), visible: locationWatch() != null">Nemme im Aug b'halta!</button><br>
                         <span data-bind="text: gpsStatus()"></span>
                         <div data-bind="if: location()?.coords != null">
-                            Lat: <span data-bind="text: location().coords.latitude"></span><br>
-                            Lon: <span data-bind="text: location().coords.longitude"></span><br>
+                            Pos: <span data-bind="text: location().coords.latitude"></span>, <span data-bind="text: location().coords.longitude"></span><br>
                             Accuracy: <span data-bind="text: location().coords.accuracy"></span>
                         </div>
                     </td>
@@ -411,7 +411,7 @@
                 <tr>
                     <td>
                         <ul data-bind="template: { name: 'collectionSourceTreeElement', foreach: $data.collectionSourceTree }"></ul>
-                        <label>Glump (IDs/URLs)<br><textarea rows="20" cols="50" data-bind="value: itemIds"></textarea></label>
+                        <label>Glump (IDs/URLs)<br><textarea rows="10" cols="50" data-bind="value: itemIds"></textarea></label>
                     </td>
                     <td id="">
                         <ul data-bind="template: { name: 'targetTreeElement', foreach: $data.targetTree }"></ul>
