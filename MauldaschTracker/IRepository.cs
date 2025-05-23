@@ -2,17 +2,7 @@ using System.Data;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
-public interface IMauldaschTrackerService
-{
-    Task AddItems(AddItemsRequest request);
-    Task AddCollection(string name);
-    Task DeleteCollection(Guid id);
-    Task<List<GetCollectionsResultItem>> GetCollections();
-    Task UpdateLocation(IList<Guid> items, IList<Guid> collections, Guid? targetCollection, decimal? latitude, decimal? longitude);
-    Task<TrackingResult?> GetTrackingResult(Guid itemId);
-}
-
-public class MauldaschTrackerService : IMauldaschTrackerService
+public class MauldaschTrackerService
 {
     private readonly string _connectionString;
 
@@ -55,6 +45,38 @@ public class MauldaschTrackerService : IMauldaschTrackerService
         }
     }
 
+    public async Task<GetItemsResultCollection> GetItems()
+    {
+        using var db = new SqlConnection(_connectionString);
+        db.Open();
+
+        var topItems = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId IS NULL");
+        var topCollections = await db.QueryAsync<(Guid Id, string Name)>("SELECT Id, Name FROM Collection WHERE ParentCollectionId IS NULL");
+
+        var topCollectionResults = new List<GetItemsResultCollection>();
+        foreach (var collection in topCollections)
+        {
+            topCollectionResults.Add(await GetItemsInternal(db, collection.Id, collection.Name));
+        }
+
+        return new GetItemsResultCollection(Guid.Empty, "Irgendwo", topCollectionResults, topItems.ToList());
+    }
+
+    private async Task<GetItemsResultCollection> GetItemsInternal(SqlConnection db, Guid id, string name)
+    {
+        var items = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId = @Id", new { Id = id });
+        var collections = await db.QueryAsync<(Guid Id, string Name)>("SELECT Id, Name FROM Collection WHERE ParentCollectionId = @Id", new { Id = id });
+
+        var collectionResults = new List<GetItemsResultCollection>();
+
+        foreach (var collection in collections)
+        {
+            collectionResults.Add(await GetItemsInternal(db, collection.Id, collection.Name));
+        }
+
+        return new GetItemsResultCollection(id, name, collectionResults, items.ToList());
+    }
+
     public async Task<List<GetCollectionsResultItem>> GetCollections()
     {
         using var db = new SqlConnection(_connectionString);
@@ -74,9 +96,9 @@ public class MauldaschTrackerService : IMauldaschTrackerService
     {
         using var db = new SqlConnection(_connectionString);
         db.Open();
-        var sql = "SELECT * FROM Item";
+        var sql = "SELECT * FROM Item WHERE Id = @Id";
 
-        var item = await db.QueryFirstOrDefaultAsync<Item?>(sql);
+        var item = await db.QueryFirstOrDefaultAsync<Item?>(sql, new {Id = itemId});
         if (item == null)
             return null;
 
@@ -85,7 +107,8 @@ public class MauldaschTrackerService : IMauldaschTrackerService
             TrackingPosition.Time,
             Collection.Name AS Collection,
             TrackingPosition.Latitude,
-            TrackingPosition.Longitude
+            TrackingPosition.Longitude,
+            TrackingPosition.Accuracy
         FROM TrackingPosition
         LEFT JOIN Collection ON Collection.Id = TrackingPosition.CollectionId
         WHERE TrackingPosition.ItemId = @ItemId";
@@ -150,7 +173,7 @@ public class MauldaschTrackerService : IMauldaschTrackerService
         }
     }
 
-    public async Task UpdateLocation(IList<Guid> items, IList<Guid> collections, Guid? targetCollection, decimal? latitude, decimal? longitude)
+    public async Task UpdateLocation(IList<Guid> items, IList<Guid> collections, Guid? targetCollection, decimal? latitude, decimal? longitude, decimal? accuracy)
     {
         if (targetCollection != null && (latitude != null && longitude != null))
         {
@@ -212,8 +235,8 @@ public class MauldaschTrackerService : IMauldaschTrackerService
             }
 
             var insertItemSql = @"
-                INSERT INTO TrackingPosition (ItemId, Time, CollectionId, Latitude, Longitude)
-                SELECT @Id, @Time, ISNULL(@CollectionId, Item.ParentCollectionId), @Latitude, @Longitude
+                INSERT INTO TrackingPosition (ItemId, Time, CollectionId, Latitude, Longitude, Accuracy)
+                SELECT @Id, @Time, ISNULL(@CollectionId, Item.ParentCollectionId), @Latitude, @Longitude, @Accuracy
                 FROM Item
                 WHERE Id = @Id";
 
@@ -226,7 +249,8 @@ public class MauldaschTrackerService : IMauldaschTrackerService
                     Time = now,
                     CollectionId = targetCollection,
                     Latitude = latitude,
-                    Longitude = longitude
+                    Longitude = longitude,
+                    Accuracy = accuracy
                 }, tran);
             }
 

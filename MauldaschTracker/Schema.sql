@@ -25,3 +25,4 @@ CREATE TABLE MauldaschTracker.dbo.TrackingPosition (
 	CONSTRAINT TrackingPosition_Collection_FK FOREIGN KEY (CollectionId) REFERENCES MauldaschTracker.dbo.Collection(Id),
 	CONSTRAINT TrackingPosition_Item_FK FOREIGN KEY (ItemId) REFERENCES MauldaschTracker.dbo.Item(Id) ON DELETE CASCADE
 );
+ALTER TABLE MauldaschTracker.dbo.TrackingPosition ADD Accuracy decimal(9,1) NULL;

@@ -38,10 +38,7 @@
                         cell.innerText = pos.collection;
                         
                         cell = row.insertCell();
-                        cell.innerText = pos.latitude;
-                        
-                        cell = row.insertCell();
-                        cell.innerText = pos.longitude;
+                        cell.innerText = (pos.latitude != null && pos.longitude != null) ? `${pos.latitude} ${pos.longitude} ${pos.accuracy != null ? `(${pos.accuracy}m)` : ''}` : '';
                     }
 
                     document.getElementById('locations').replaceChildren(table);

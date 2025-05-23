@@ -107,7 +107,8 @@
                             items: ids ?? [],
                             collections: this.getActiveSourceCollectionIds(this.collectionSourceTree()),
                             latitude: position.coords.latitude,
-                            longitude: position.coords.longitude
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
                         };
 
                         const response = await fetch('/api/SetPosition', {
@@ -246,6 +247,26 @@
                 }
             }
 
+            class ItemTreeModel {
+                constructor() {
+                    this.itemTree = ko.observable();
+                }
+
+                async init() {
+                    try {
+                        const response = await fetch(`/api/Item/GetList`);
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+
+                        const itemData = await response.json();
+                        this.itemTree(itemData);
+                    } catch (error) {
+                        alert('Des glomp isch hee:\n' + error);
+                    }
+                }
+            }
+
             class AddCollectionModel {
                 constructor() {
                     this.name = ko.observable('');
@@ -326,6 +347,7 @@
             const moveModel = new MoveFormModel();
             const addModel = new AddCollectionModel();
             const deleteModel = new DeleteCollectionModel();
+            const itemTreeModel = new ItemTreeModel();
 
             async function resetViews() {
                 const collections = await loadCollections();
@@ -334,6 +356,7 @@
                 moveModel.init(collections);
                 addModel.init();
                 deleteModel.init(collections);
+                await itemTreeModel.init();
             }
 
             window.addEventListener("load", async () => {
@@ -341,6 +364,7 @@
                 ko.applyBindings(moveModel, document.getElementById('move-form'));
                 ko.applyBindings(addModel, document.getElementById('add-form'));
                 ko.applyBindings(deleteModel, document.getElementById('delete-form'));
+                ko.applyBindings(itemTreeModel, document.getElementById('show-items-form'));
 
                 await resetViews();
             });
@@ -367,6 +391,24 @@
                 </ul>
             </li>
         </script>
+
+        <script id="itemTreeItem" type="text/html">
+            <li>
+                <label>
+                    <span data-bind="text: id"></span> | <span data-bind="text: owner"></span> | <span data-bind="text: name"></span>
+                </label>
+            </li>
+        </script>
+
+        <script id="itemTreeCollection" type="text/html">
+            <li>
+                <label>
+                    <span data-bind="text: name"></span>
+                </label>
+                <ul data-bind="template: { name: 'itemTreeCollection', foreach: collections }"></ul>
+                <ul data-bind="template: { name: 'itemTreeItem', foreach: items }"></ul>
+            </li>
+        </script>
     </head>
     <body>
         <form id="update-tracking-form">
@@ -376,7 +418,7 @@
                 <tr>
                     <th>Was?</th>
                     <th>GPS</th>
-                    <th>Upload</th>
+                    <th>Duud's au?</th>
                 </tr>
                 <tr>
                     <td>
@@ -390,7 +432,8 @@
                         <span data-bind="text: gpsStatus()"></span>
                         <div data-bind="if: location()?.coords != null">
                             Pos: <span data-bind="text: location().coords.latitude"></span>, <span data-bind="text: location().coords.longitude"></span><br>
-                            Accuracy: <span data-bind="text: location().coords.accuracy"></span>
+                            Accuracy: <span data-bind="text: location().coords.accuracy.toFixed(0)"></span> m<br>
+                            Time: <span data-bind="text: new Date(location().timestamp).toLocaleTimeString()"></span>
                         </div>
                     </td>
                     <td>
@@ -419,6 +462,11 @@
                     <td><button data-bind="click: () => doit()">Abfahrt!</button><span data-bind="text: status"></span></td>
                 </tr>
             </table>
+        </form>
+
+        <form id="show-items-form">
+            <h2>Glump</h2>
+            <ul data-bind="template: { name: 'itemTreeCollection', data: $data.itemTree, if: $data.itemTree }"></ul>
         </form>
 
         <form id="add-form">
