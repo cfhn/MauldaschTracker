@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script type="application/javascript" src="knockout-3.5.1.js"></script>
+        <script type="application/javascript">
+            class AddItemFormModel {
+                constructor() {
+                    this.status = ko.observable('');
+                    this.owner = ko.observable();
+
+                    this.items = ko.observableArray();
+                    for (let i = 0; i < 10; i++) {
+                        this.items.push({name: ko.observable(), description: ko.observable()});
+                    }
+                }
+
+                async doit() {
+                    try {
+                        this.status('🤔');
+                        var data = {
+                            owner: this.owner(),
+                            items: this.items()
+                                .filter(x => x.name() != null && x.name().length > 0)
+                                .map(x => ({name: x.name(), description: x.description()}))
+                        };
+
+                        const response = await fetch('/api/Item/Add', {
+                            method: 'POST',
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+                        this.status('✅');
+                    } catch (error) {
+                        alert('Des glomp isch hee:\n' + error);
+                    }
+                }
+            }
+
+            window.addEventListener("load", async () => {
+                ko.applyBindings(new AddItemFormModel(), document.getElementById('add-form'));
+            });
+        </script>
+    </head>
+    <body>
+        <form id="add-form">
+            <h2>Glump olega</h2>
+            <label>Wem G'hörts: <input type="text" required data-bind="value: owner"></input></label>
+
+            <table border="1" cellpadding="5">
+                <tr>
+                    <th>Was isches</th>
+                    <th>Details</th>
+                </tr>
+                <!-- ko foreach: items -->
+                <tr>
+                    <td>
+                        <input data-bind="value: name"></input>
+                    </td>
+                    <td>
+                        <input data-bind="value: description"></input>
+                    </td>
+                    
+                </tr>
+                <!-- /ko -->
+            </table>
+
+            <button style="padding: 50px;" data-bind="click: () => doit()">Abfahrt!</button>
+            <span data-bind="text: status"></span>
+        </form>
+    </body>
+</html>

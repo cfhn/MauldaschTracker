@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script type="application/javascript">
+            window.addEventListener("load", async () => {
+                try {
+                    const hash = new URLSearchParams(window.location.hash.substring(1));
+                    const item = hash.get('item');
+
+                    const apiParams = new URLSearchParams();
+                    apiParams.append("item", item);
+
+                    const response = await fetch(`/api/Item/Track?${apiParams}`);
+                    if (!response.ok) {
+                        throw new Error(`Response status: ${response.status}`);
+                    }
+
+                    const itemData = await response.json();
+
+                    document.getElementById('itemid').innerText = itemData.item.id;
+                    document.getElementById('owner').innerText = itemData.item.owner;
+                    document.getElementById('description').innerText = itemData.item.description;
+
+                    const table = document.createElement('table');
+                    table.setAttribute('border', '1');
+                    table.setAttribute('cellpadding', '5');
+
+                    for (const pos of itemData.resultItems)
+                    {
+                        const row = table.insertRow();
+                        
+                        let cell = row.insertCell();
+                        cell.innerText = pos.time;
+                        
+                        cell = row.insertCell();
+                        cell.innerText = pos.collection;
+                        
+                        cell = row.insertCell();
+                        cell.innerText = pos.latitude;
+                        
+                        cell = row.insertCell();
+                        cell.innerText = pos.longitude;
+                    }
+
+                    document.getElementById('locations').replaceChildren(table);
+
+                } catch (error) {
+                    alert('Des glomp isch hee:\n' + error);
+                }
+            });
+        </script>
+
+        <style>
+        </style>
+    </head>
+    <body>
+        <h2>Glomp</h2>
+        <table border="1" cellpadding="5">
+            <tr>
+                <td>Nommer</td>
+                <td id="itemid">Jetz wart halt amol</td>
+            </tr>
+            <tr>
+                <td>Was isches</td>
+                <td id="description">bisses fertig</td>
+            </tr>
+            <tr>
+                <td>Wem g'hörts</td>
+                <td id="owner">g'lade hot</td>
+            </tr>
+
+        </table>
+        <h2>Wo war's un wo isches</h2>
+        <div id="locations"></div>
+    </body>
+</html>

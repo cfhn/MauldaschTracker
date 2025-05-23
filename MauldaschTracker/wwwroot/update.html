@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script type="application/javascript" src="knockout-3.5.1.js"></script>
+        <script type="application/javascript">
+            async function loadCollections(){
+                try {
+                    const response = await fetch('/api/Collection/GetList');
+                    if (!response.ok) {
+                        throw new Error(`Response status: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    alert('Des glomp isch hee:\n' + error);
+                }
+            }
+
+            class MoveFormModel {
+                constructor(collections) {
+                    this.collections = collections;
+
+                    this.status = ko.observable('');
+
+                    this.itemIds = ko.observable();
+
+                    this.collectionSourceTree = ko.observable(this.getSourceTree(this.collections, null));
+
+                    let targetTree = this.getTargetTree([
+                        {id: '', name: 'irgendwo', parent: null},
+                        {id: 'GPS', name: 'Hier her! (GPS)', parent: null}, 
+                        ...this.collections
+                    ], null);
+
+                    this.targetTree = ko.observable(targetTree);
+                }
+
+                getSourceTree(collections, parentItem) {
+                    let ret = [];
+                    for (const collection of collections) {
+                        if (collection.parent == parentItem?.id) {
+                            const item = {
+                                id: collection.id,
+                                name: collection.name,
+                                checked: ko.observable(false),
+                                visible: ko.computed(() => parentItem == null || !parentItem.checked())
+                            };
+                            item.children = this.getSourceTree(collections, item);
+                            ret.push(item);
+                        }
+                    }
+                    return ret;
+                }
+
+                getTargetTree(collections, parentItem) {
+                    let ret = [];
+                    for (const collection of collections) {
+                        if (collection.parent == parentItem?.id) {
+                            const item = {
+                                id: collection.id,
+                                name: collection.name,
+                                checked: ko.observable(false),
+                                enabled: ko.observable(true)
+                            };
+                            item.children = this.getTargetTree(collections, item);
+                            ret.push(item);
+                        }
+                    }
+                    return ret;
+                }
+
+                getActiveSourceCollectionIds(treeItems){
+                    let ret = [];
+                    for (const treeItem of treeItems) {
+                        // if item is checked, don't add children (even if they are checked)
+                        if(treeItem.checked())
+                            ret.push(treeItem.id);
+                        else
+                            ret.push(...this.getActiveSourceCollectionIds(treeItem.children));
+                    }
+                    return ret;
+                }
+
+                getActiveTargetId(treeItems){
+                    for (const treeItem of treeItems) {
+                        if (treeItem.checked())
+                            return treeItem.id;
+                        else
+                        {
+                            const id = this.getActiveTargetId(treeItem.children)
+                            if (id != null)
+                                return id;
+                        }
+                    }
+                    return null;
+                }
+
+                async doit() {
+                    try {
+                        this.status('🤔');
+
+                        const ids = (this.itemIds() ?? '').match(/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}/g);                        
+
+                        var data = {
+                            items: ids ?? [],
+                            collections: this.getActiveSourceCollectionIds(this.collectionSourceTree()),
+                            location: this.getActiveTargetId(this.targetTree()),
+                            latitude: null,
+                            longitude: null,
+                        };
+
+                        const response = await fetch('/api/SetLocation', {
+                            method: 'POST',
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+                        this.status('✅');
+                    } catch (error) {
+                        alert('Des glomp isch hee:\n' + error);
+                    }
+                }
+            }
+
+            class AddCollectionModel {
+                constructor() {
+                    this.name = ko.observable();
+                    this.status = ko.observable('');
+                }
+
+                async doit() {
+                    try {
+                        this.status('🤔');
+                        const response = await fetch('/api/Collection/Add', {
+                            method: 'POST',
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({name: this.name()})
+                        });
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+                        this.status('✅');
+                    } catch (error) {
+                        alert('Des glomp isch hee:\n' + error);
+                    }
+                }
+            }
+
+            window.addEventListener("load", async () => {
+                const collections = await loadCollections();
+
+                ko.applyBindings(new MoveFormModel(collections), document.getElementById('move-form'));
+                ko.applyBindings(new AddCollectionModel(), document.getElementById('add-form'));
+            });
+        </script>
+
+        <script id="collectionSourceTreeElement" type="text/html">
+            <li>
+                <label>
+                    <input type="checkbox" data-bind="checked: checked, visible: visible">
+                    <span data-bind="text: name"></span>
+                </label>
+                <ul data-bind="template: { name: 'collectionSourceTreeElement', foreach: children }">
+                </ul>
+            </li>
+        </script>
+
+        <script id="targetTreeElement" type="text/html">
+            <li>
+                <label>
+                    <input type="radio" name="target-tree" data-bind="checked: checked, enable: enabled">
+                    <span data-bind="text: name"></span>
+                </label>
+                <ul data-bind="template: { name: 'targetTreeElement', foreach: children }">
+                </ul>
+            </li>
+        </script>
+    </head>
+    <body>
+        <form id="move-form">
+            <h2>Glump umlada</h2>
+            <table border="1" cellpadding="5">
+                <tr>
+                    <th>Was?</th>
+                    <th>Wohin?</th>
+                    <th>Abfahrt?</th>
+                </tr>
+                <tr>
+                    <td>
+                        <ul data-bind="template: { name: 'collectionSourceTreeElement', foreach: $data.collectionSourceTree }"></ul>
+                        <label>Glump (IDs/URLs)<br><textarea rows="20" cols="50" data-bind="value: itemIds"></textarea></label>
+                    </td>
+                    <td id="">
+                        <ul data-bind="template: { name: 'targetTreeElement', foreach: $data.targetTree }"></ul>
+                    </td>
+                    <td><button data-bind="click: () => doit()">Abfahrt!</button><span data-bind="text: status"></span></td>
+                </tr>
+            </table>
+        </form>
+
+        <form id="add-form">
+            <h2>Grupp' olega</h2>
+            <table border="1" cellpadding="5">
+                <tr>
+                    <th>Name</th>
+                    <th>Abfahrt?</th>
+                </tr>
+                <tr>
+                    <td>
+                        <input data-bind="value: name"></input>
+                    </td>
+                    <td><button data-bind="click: () => doit()">Abfahrt!</button><span data-bind="text: status"></span></td>
+                </tr>
+            </table>
+        </form>
+    </body>
+</html>

@@ -1,0 +1,6 @@
+@MauldaschTracker_HostAddress = http://localhost:5294
+
+GET {{MauldaschTracker_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
