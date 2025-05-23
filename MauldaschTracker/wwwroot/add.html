@@ -7,9 +7,13 @@
             class AddItemFormModel {
                 constructor() {
                     this.status = ko.observable('');
-                    this.owner = ko.observable();
+                    this.owner = ko.observable('');
 
                     this.items = ko.observableArray();
+                }
+
+                init() {
+                    this.items.removeAll();
                     for (let i = 0; i < 10; i++) {
                         this.items.push({name: ko.observable(), description: ko.observable()});
                     }
@@ -36,14 +40,23 @@
                             throw new Error(`Response status: ${response.status}`);
                         }
                         this.status('✅');
+                        resetViews();
                     } catch (error) {
                         alert('Des glomp isch hee:\n' + error);
                     }
                 }
             }
 
+            const addModel = new AddItemFormModel();
+
+            function resetViews() {
+                addModel.init();
+            }
+
             window.addEventListener("load", async () => {
-                ko.applyBindings(new AddItemFormModel(), document.getElementById('add-form'));
+                ko.applyBindings(addModel, document.getElementById('add-form'));
+
+                resetViews();
             });
         </script>
     </head>
@@ -65,7 +78,6 @@
                     <td>
                         <input data-bind="value: description"></input>
                     </td>
-                    
                 </tr>
                 <!-- /ko -->
             </table>

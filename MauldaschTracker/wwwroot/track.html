@@ -20,6 +20,7 @@
 
                     document.getElementById('itemid').innerText = itemData.item.id;
                     document.getElementById('owner').innerText = itemData.item.owner;
+                    document.getElementById('name').innerText = itemData.item.name;
                     document.getElementById('description').innerText = itemData.item.description;
 
                     const table = document.createElement('table');
@@ -59,10 +60,14 @@
         <table border="1" cellpadding="5">
             <tr>
                 <td>Nommer</td>
-                <td id="itemid">Jetz wart halt amol</td>
+                <td id="itemid">Jetz wart </td>
             </tr>
             <tr>
                 <td>Was isches</td>
+                <td id="name">halt amol</td>
+            </tr>
+            <tr>
+                <td>Was isches genau?</td>
                 <td id="description">bisses fertig</td>
             </tr>
             <tr>

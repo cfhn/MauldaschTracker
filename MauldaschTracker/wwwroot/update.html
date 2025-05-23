@@ -4,35 +4,149 @@
         <meta charset="utf-8">
         <script type="application/javascript" src="knockout-3.5.1.js"></script>
         <script type="application/javascript">
-            async function loadCollections(){
-                try {
-                    const response = await fetch('/api/Collection/GetList');
-                    if (!response.ok) {
-                        throw new Error(`Response status: ${response.status}`);
+            class UpdateTrackingModel {
+                constructor() {
+                    this.locationWatch = ko.observable();
+                    this.status = ko.observable('');
+                    this.gpsStatus = ko.observable('');
+                    this.itemIds = ko.observable();
+                    this.location = ko.observable();
+
+                    this.collectionSourceTree = ko.observable([]);
+
+                    this.location.subscribe((newValue) => this.setPosition(newValue));
+                }
+
+                init(collections) {
+                    //this.status('');
+                    this.stopPositionTracking();
+                    this.status('');
+                    this.gpsStatus('');
+                    this.itemIds('')
+                    this.location(null);
+                    this.collectionSourceTree(this.getSourceTree(collections, null));
+                }
+
+                getSourceTree(collections, parentItem) {
+                    let ret = [];
+                    for (const collection of collections) {
+                        if (collection.parent == parentItem?.id) {
+                            const item = {
+                                id: collection.id,
+                                name: collection.name,
+                                checked: ko.observable(false),
+                                visible: ko.computed(() => parentItem == null || !parentItem.checked())
+                            };
+                            item.children = this.getSourceTree(collections, item);
+                            ret.push(item);
+                        }
                     }
-                    return await response.json();
-                } catch (error) {
-                    alert('Des glomp isch hee:\n' + error);
+                    return ret;
+                }
+
+                getActiveSourceCollectionIds(treeItems){
+                    let ret = [];
+                    for (const treeItem of treeItems) {
+                        // if item is checked, don't add children (even if they are checked)
+                        if(treeItem.checked())
+                            ret.push(treeItem.id);
+                        else
+                            ret.push(...this.getActiveSourceCollectionIds(treeItem.children));
+                    }
+                    return ret;
+                }
+
+                updatePositionOnce() {
+                    this.gpsStatus('🤔');
+                    navigator.geolocation.getCurrentPosition(
+                        pos => {
+                            this.location(pos);
+                            this.gpsStatus('✅');
+                        }, 
+                        err => {
+                            this.location(null);
+                            this.gpsStatus(`Error: ${err.message}`);
+                        },
+                        {maximumAge: 15*60*1000, enableHighAccuracy: true}
+                    );
+                }
+
+                startPositionTracking() {
+                    if (this.locationWatch() == null){
+                        this.gpsStatus('🤔');
+                        this.locationWatch(navigator.geolocation.watchPosition(
+                            pos => {
+                                this.location(pos);
+                                this.gpsStatus('✅');
+                            }, 
+                            err => {
+                                this.location(null);
+                                this.gpsStatus(`Error: ${err.message}`);
+                            },
+                            {maximumAge: 15*60*1000, enableHighAccuracy: true}
+                        ));
+                    }
+                }
+
+                stopPositionTracking() {
+                    if (this.locationWatch() != null) {
+                        navigator.geolocation.clearWatch(this.locationWatch());
+                        this.locationWatch(null); 
+                    }
+                }
+
+                async setPosition(position) {
+                    try {
+                        if (position == null || position.coords == null)
+                            return;
+                        this.status('🤔');
+
+                        const ids = (this.itemIds() ?? '').match(/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}/g);
+
+                        let data = {
+                            items: ids ?? [],
+                            collections: this.getActiveSourceCollectionIds(this.collectionSourceTree()),
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        };
+
+                        const response = await fetch('/api/SetLocation', {
+                            method: 'POST',
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+                        this.status('✅');
+                    } catch (error) {
+                        alert('Des glomp isch hee:\n' + error);
+                    }
                 }
             }
 
             class MoveFormModel {
-                constructor(collections) {
-                    this.collections = collections;
-
+                constructor() {
                     this.status = ko.observable('');
-
                     this.itemIds = ko.observable();
 
-                    this.collectionSourceTree = ko.observable(this.getSourceTree(this.collections, null));
+                    this.collectionSourceTree = ko.observable([]);
+                    this.targetTree = ko.observable([]);
+                }
+
+                init(collections) {
+                    //this.status('');
+
+                    this.collectionSourceTree(this.getSourceTree(collections, null));
 
                     let targetTree = this.getTargetTree([
-                        {id: '', name: 'irgendwo', parent: null},
-                        {id: 'GPS', name: 'Hier her! (GPS)', parent: null}, 
-                        ...this.collections
+                        {id: '', name: 'irgendwo (Einzeln)', parent: null},
+                        ...collections
                     ], null);
 
-                    this.targetTree = ko.observable(targetTree);
+                    this.targetTree(targetTree);
                 }
 
                 getSourceTree(collections, parentItem) {
@@ -99,14 +213,18 @@
                     try {
                         this.status('🤔');
 
-                        const ids = (this.itemIds() ?? '').match(/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}/g);                        
+                        const ids = (this.itemIds() ?? '').match(/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}/g);
 
-                        var data = {
+                        const targetId = this.getActiveTargetId(this.targetTree());
+                        if (targetId == null)
+                        {
+                            throw new Error('ja wo no denn?');
+                        }
+
+                        let data = {
                             items: ids ?? [],
                             collections: this.getActiveSourceCollectionIds(this.collectionSourceTree()),
-                            location: this.getActiveTargetId(this.targetTree()),
-                            latitude: null,
-                            longitude: null,
+                            parentCollection: targetId == '' ? null : targetId
                         };
 
                         const response = await fetch('/api/SetLocation', {
@@ -120,6 +238,7 @@
                             throw new Error(`Response status: ${response.status}`);
                         }
                         this.status('✅');
+                        await resetViews();
                     } catch (error) {
                         alert('Des glomp isch hee:\n' + error);
                     }
@@ -128,8 +247,13 @@
 
             class AddCollectionModel {
                 constructor() {
-                    this.name = ko.observable();
+                    this.name = ko.observable('');
                     this.status = ko.observable('');
+                }
+
+                init() {
+                    this.name('');
+                    //this.status('');
                 }
 
                 async doit() {
@@ -146,17 +270,78 @@
                             throw new Error(`Response status: ${response.status}`);
                         }
                         this.status('✅');
+                        await resetViews();
                     } catch (error) {
                         alert('Des glomp isch hee:\n' + error);
                     }
                 }
             }
 
-            window.addEventListener("load", async () => {
+            class DeleteCollectionModel {
+                constructor(collections) {
+                    this.items = ko.observable();
+                }
+
+                init(collections) {
+                    this.items(collections.map(x => ({id: x.id, name: x.name, status: ko.observable('')})));
+                }
+
+                async doit(item) {
+                    try {
+                        item.status('🤔');
+                        if(confirm(`Wirklich ${item.name} löscha?`)) {
+                            const response = await fetch('/api/Collection/Delete', {
+                                method: 'POST',
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({id: item.id})
+                            });
+                            if (!response.ok) {
+                                throw new Error(`Response status: ${response.status}`);
+                            }
+                        }
+                        item.status('✅');
+                        await resetViews();
+                    } catch (error) {
+                        alert('Des glomp isch hee:\n' + error);
+                    }
+                }
+            }
+
+            async function loadCollections(){
+                try {
+                    const response = await fetch('/api/Collection/GetList');
+                    if (!response.ok) {
+                        throw new Error(`Response status: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    alert('Des glomp isch hee:\n' + error);
+                }
+            }
+
+            const updateTrackingModel = new UpdateTrackingModel();
+            const moveModel = new MoveFormModel();
+            const addModel = new AddCollectionModel();
+            const deleteModel = new DeleteCollectionModel();
+
+            async function resetViews() {
                 const collections = await loadCollections();
 
-                ko.applyBindings(new MoveFormModel(collections), document.getElementById('move-form'));
-                ko.applyBindings(new AddCollectionModel(), document.getElementById('add-form'));
+                updateTrackingModel.init(collections);
+                moveModel.init(collections);
+                addModel.init();
+                deleteModel.init(collections);
+            }
+
+            window.addEventListener("load", async () => {
+                ko.applyBindings(updateTrackingModel, document.getElementById('update-tracking-form'));
+                ko.applyBindings(moveModel, document.getElementById('move-form'));
+                ko.applyBindings(addModel, document.getElementById('add-form'));
+                ko.applyBindings(deleteModel, document.getElementById('delete-form'));
+
+                await resetViews();
             });
         </script>
 
@@ -183,6 +368,38 @@
         </script>
     </head>
     <body>
+        <form id="update-tracking-form">
+            <h2>Ort melda</h2>
+            <p><b>Uffbasse!</b> Glump und Gruppa die selber in 'era Gruppa sin, werded aus d'r Gruppa nausgschmissa beim Ort setza!</p>
+            <table border="1" cellpadding="5">
+                <tr>
+                    <th>Was?</th>
+                    <th>GPS</th>
+                    <th>Upload</th>
+                </tr>
+                <tr>
+                    <td>
+                        <ul data-bind="template: { name: 'collectionSourceTreeElement', foreach: $data.collectionSourceTree }"></ul>
+                        <label>Glump (IDs/URLs)<br><textarea rows="20" cols="50" data-bind="value: itemIds"></textarea></label>
+                    </td>
+                    <td>
+                        <button data-bind="click: () => updatePositionOnce(), visible: locationWatch() == null">Oi mol setza!</button><br>
+                        <button data-bind="click: () => startPositionTracking(), visible: locationWatch() == null">Im Aug b'halta! (Live Tracking)</button>
+                        <button data-bind="click: () => stopPositionTracking(), visible: locationWatch() != null">Nemme im Aug b'halta!</button><br>
+                        <span data-bind="text: gpsStatus()"></span>
+                        <div data-bind="if: location()?.coords != null">
+                            Lat: <span data-bind="text: location().coords.latitude"></span><br>
+                            Lon: <span data-bind="text: location().coords.longitude"></span><br>
+                            Accuracy: <span data-bind="text: location().coords.accuracy"></span>
+                        </div>
+                    </td>
+                    <td>
+                        <span data-bind="text: status"></span>
+                    </td>
+                </tr>
+            </table>
+        </form>
+
         <form id="move-form">
             <h2>Glump umlada</h2>
             <table border="1" cellpadding="5">
@@ -205,7 +422,7 @@
         </form>
 
         <form id="add-form">
-            <h2>Grupp' olega</h2>
+            <h2>Gruppa olega</h2>
             <table border="1" cellpadding="5">
                 <tr>
                     <th>Name</th>
@@ -217,6 +434,24 @@
                     </td>
                     <td><button data-bind="click: () => doit()">Abfahrt!</button><span data-bind="text: status"></span></td>
                 </tr>
+            </table>
+        </form>
+
+        <form id="delete-form">
+            <h2>Gruppa fortschmeißa</h2>
+            <table border="1" cellpadding="5">
+                <tr>
+                    <th>Name</th>
+                    <th>Abfahrt?</th>
+                </tr>
+                <!-- ko foreach: items -->
+                <tr>
+                    <td>
+                        <span data-bind="text: name"></span>
+                    </td>
+                    <td><button data-bind="click: () => $parent.doit($data)">🗑️Abfahrt!🗑️</button><span data-bind="text: status"></span></td>
+                </tr>
+                <!-- /ko -->
             </table>
         </form>
     </body>

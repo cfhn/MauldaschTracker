@@ -19,7 +19,7 @@ app.UseHttpsRedirection();
 
 app.MapGet("/api/Item/Track", (Guid item) =>
 {
-    return new TrackingResult(new Item(Guid.NewGuid(), "Max Mustermann", "300kg Stahlofen"),
+    return new TrackingResult(new Item(Guid.NewGuid(), "Max Mustermann", "300kg Stahlofen", "1m³ Platz und 300kg bitte Vale ich brauch den"),
         [
             new TrackingResultItem(DateTime.UtcNow, "LKW", 49, 9)
         ]);
@@ -38,9 +38,13 @@ app.MapGet("/api/Collection/GetList", () =>
     // TODO
     var id1 = Guid.NewGuid();
     var id2 = Guid.NewGuid();
+    var id3 = Guid.NewGuid();
+    var id4 = Guid.NewGuid();
     return new List<GetCollectionsResultItem>{
         new GetCollectionsResultItem(id2, "Palette 1", 10, id1),
-        new GetCollectionsResultItem(id1, "LKW", 0, null)
+        new GetCollectionsResultItem(id3, "Palette 2", 10, id1),
+        new GetCollectionsResultItem(id1, "LKW", 0, null),
+        new GetCollectionsResultItem(id4, "MSE", 0, null)
     };
 })
 .WithName("GetCollections");
@@ -52,13 +56,28 @@ app.MapPost("/api/Collection/Add", (AddCollectionRequest request) =>
 })
 .WithName("AddCollection");
 
-app.MapPost("/api/SetLocation", (SetLocationRequest request) =>
+app.MapPost("/api/Collection/Delete", (DeleteCollectionRequest request) =>
+{
+    // TODO
+    return Results.Ok();
+})
+.WithName("DeleteCollection");
+
+app.MapPost("/api/SetCollection", (SetCollectionRequest request) =>
 {
     // TODO
     //TODO: validieren dass location nich in sich selbst sein kann (rekursiv)
     return Results.Ok();
 })
-.WithName("SetLocation");
+.WithName("SetCollection");
+
+app.MapPost("/api/SetPosition", (SetPositionRequest request) =>
+{
+    // TODO
+    //TODO: validieren dass location nich in sich selbst sein kann (rekursiv)
+    return Results.Ok();
+})
+.WithName("SetPosition");
 
 app.UseStaticFiles(new StaticFileOptions()
 {
@@ -66,21 +85,23 @@ app.UseStaticFiles(new StaticFileOptions()
     RequestPath = ""
 });
 
-app.Run();
+app.Run("http://+:8080");
 
 record TrackingResult(Item Item, List<TrackingResultItem> ResultItems);
 record TrackingResultItem(DateTime Time, string? Collection, decimal? Latitude, decimal? Longitude);
 record GetCollectionsResultItem(Guid Id, string Name, int Items, Guid? Parent);
 
 
-record ItemCollection(Guid Id, string Name, Guid? Collection);
+record ItemCollection(Guid Id, string Name, Guid? ParentCollection);
 record TrackingPosition(Guid Item, DateTime Time, Guid? Collection, decimal? Latitude, decimal? Longitude);
-record Item(Guid Id, string Owner, string Description);
+record Item(Guid Id, string Owner, string Name, string Description);
 
 
-record SetLocationRequest(IList<Guid> Items, IList<Guid> Collections, Guid? Location, decimal? Latitude, decimal? Longitude);
+record SetCollectionRequest(IList<Guid> Items, IList<Guid> Collections, Guid? ParentCollection);
+record SetPositionRequest(IList<Guid> Items, IList<Guid> Collections, decimal? Latitude, decimal? Longitude);
 
 record AddItemsRequest(string Owner, IList<AddItemRequestItem> Items);
 record AddItemRequestItem(string Name, string Description);
 
 record AddCollectionRequest(string Name);
+record DeleteCollectionRequest(Guid Id);
