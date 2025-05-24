@@ -32,17 +32,23 @@
                         const row = table.insertRow();
                         
                         let cell = row.insertCell();
-                        cell.innerText = pos.time;
+                        cell.innerText = new Date(pos.time).toLocaleString();
                         
                         cell = row.insertCell();
                         cell.innerText = pos.collection;
                         
                         cell = row.insertCell();
-                        cell.innerText = (pos.latitude != null && pos.longitude != null) ? `${pos.latitude} ${pos.longitude} ${pos.accuracy != null ? `(${pos.accuracy}m)` : ''}` : '';
+                        if (pos.latitude != null && pos.longitude != null)
+                        {
+                            let link = document.createElement('a');
+                            link.setAttribute('target', '_blank')
+                            link.setAttribute('href', `https://www.openstreetmap.org/?mlat=${pos.latitude}&mlon=${pos.longitude}#map=11/${pos.latitude}/${pos.longitude}`);
+                            link.innerText = `${pos.latitude} ${pos.longitude} ${pos.accuracy != null ? `(${pos.accuracy.toFixed(0)}m)` : ''}`;
+                            cell.appendChild(link);
+                        }
                     }
 
                     document.getElementById('locations').replaceChildren(table);
-
                 } catch (error) {
                     alert('Des glomp isch hee:\n' + error);
                 }

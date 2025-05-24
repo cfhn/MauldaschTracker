@@ -1,4 +1,5 @@
 using System.Data;
+using System.Data.Common;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
@@ -98,24 +99,39 @@ public class MauldaschTrackerService
         db.Open();
         var sql = "SELECT * FROM Item WHERE Id = @Id";
 
-        var item = await db.QueryFirstOrDefaultAsync<Item?>(sql, new {Id = itemId});
+        var item = await db.QueryFirstOrDefaultAsync<Item?>(sql, new { Id = itemId });
         if (item == null)
             return null;
 
         var listSql = @"
         SELECT
             TrackingPosition.Time,
-            Collection.Name AS Collection,
+            TrackingPosition.CollectionPath,
             TrackingPosition.Latitude,
             TrackingPosition.Longitude,
             TrackingPosition.Accuracy
         FROM TrackingPosition
-        LEFT JOIN Collection ON Collection.Id = TrackingPosition.CollectionId
-        WHERE TrackingPosition.ItemId = @ItemId";
+        WHERE TrackingPosition.ItemId = @ItemId
+        ORDER BY Time DESC";
 
-        var items = await db.QueryAsync<TrackingResultItem>(listSql, new { ItemId = itemId });
+        var items = await db.QueryAsync<(DateTime Time, string? CollectionPath, decimal? Latitude, decimal? Longitude, decimal? Accuracy)>(listSql, new { ItemId = itemId });
 
-        return new TrackingResult(item, items.ToList());
+        var collectionSql = "SELECT Id, Name FROM Collection"; // TODO: filter
+        var collections = (await db.QueryAsync<(Guid Id, string Name)>(collectionSql)).ToDictionary(x => x.Id, x => x.Name);
+
+        var trackingItems = items.Select(x => new TrackingResultItem(
+            DateTime.SpecifyKind(x.Time, DateTimeKind.Utc),
+            string.Join('/',
+                (x.CollectionPath ?? "")
+                    .Split('/', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(y => Guid.Parse(y))
+                    .Select(y => collections[y])),
+            x.Latitude,
+            x.Longitude,
+            x.Accuracy
+            ));
+
+        return new TrackingResult(item, trackingItems.ToList());
     }
 
     private async Task<IList<(Guid ItemId, Guid Collection)>> GetItemCollections(IDbConnection db, IDbTransaction? tran = null)
@@ -152,7 +168,6 @@ public class MauldaschTrackerService
 
     private async Task CheckTreeConsistency(IDbConnection db, IDbTransaction? tran, IEnumerable<Guid> collections)
     {
-
         var getParentSql = @"SELECT ParentCollectionId FROM Collection WHERE Id = (@Id)";
 
         foreach (var collection in collections)
@@ -171,6 +186,26 @@ public class MauldaschTrackerService
                 currentItem = parent.Value;
             }
         }
+    }
+
+    private async Task<string> GetCollectionPath(SqlConnection db, DbTransaction tran, Guid collection)
+    {
+        var getParentSql = @"SELECT ParentCollectionId FROM Collection WHERE Id = (@Id)";
+
+        var currentItem = collection;
+
+        IList<Guid> collections = new List<Guid> { collection };
+
+        while (true)
+        {
+            var parent = await db.QueryFirstOrDefaultAsync<Guid?>(getParentSql, new { Id = currentItem }, tran);
+            if (parent == null)
+                break;
+            collections.Add(parent.Value);
+            currentItem = parent.Value;
+        }
+
+        return string.Join('/', collections.Reverse().Select(x => x.ToString("D")));
     }
 
     public async Task UpdateLocation(IList<Guid> items, IList<Guid> collections, Guid? targetCollection, decimal? latitude, decimal? longitude, decimal? accuracy)
@@ -212,7 +247,9 @@ public class MauldaschTrackerService
 
             await CheckTreeConsistency(db, tran, affectedCollections);
 
-            var itemsPerCollection = (await GetItemCollections(db, tran))
+            var itemCollections = await GetItemCollections(db, tran);
+            var collectionPerItem = itemCollections.ToDictionary(x => x.ItemId, x => x.Collection);
+            var itemsPerCollection = itemCollections
                 .GroupBy(x => x.Collection)
                 .ToDictionary(x => x.Key, x => x.Select(y => y.ItemId).ToList());
 
@@ -227,16 +264,17 @@ public class MauldaschTrackerService
 
             if (latitude == null || longitude == null)
             {
-                var locationSql = "SELECT TOP 1 * FROM TrackingPosition WHERE CollectionId = @Collection ORDER BY Time DESC";
+                var locationSql = "SELECT TOP 1 Latitude, Longitude, Accuracy FROM TrackingPosition WHERE CollectionId = @Collection ORDER BY Time DESC";
 
-                var targetLocation = await db.QueryFirstOrDefaultAsync<TrackingPosition>(locationSql, new { Collection = targetCollection }, tran);
+                var targetLocation = await db.QueryFirstOrDefaultAsync<(decimal? Latitude, decimal? Longitude, decimal? Accuracy)?>(locationSql, new { Collection = targetCollection }, tran);
                 latitude = targetLocation?.Latitude;
                 longitude = targetLocation?.Longitude;
+                accuracy = targetLocation?.Accuracy;
             }
 
             var insertItemSql = @"
-                INSERT INTO TrackingPosition (ItemId, Time, CollectionId, Latitude, Longitude, Accuracy)
-                SELECT @Id, @Time, ISNULL(@CollectionId, Item.ParentCollectionId), @Latitude, @Longitude, @Accuracy
+                INSERT INTO TrackingPosition (ItemId, Time, CollectionId, Latitude, Longitude, Accuracy, CollectionPath)
+                SELECT @Id, @Time, Item.ParentCollectionId, @Latitude, @Longitude, @Accuracy, @CollectionPath
                 FROM Item
                 WHERE Id = @Id";
 
@@ -247,10 +285,10 @@ public class MauldaschTrackerService
                 {
                     Id = item,
                     Time = now,
-                    CollectionId = targetCollection,
                     Latitude = latitude,
                     Longitude = longitude,
-                    Accuracy = accuracy
+                    Accuracy = accuracy,
+                    CollectionPath = collectionPerItem.TryGetValue(item, out var collection) ? await GetCollectionPath(db, tran, collection) : null
                 }, tran);
             }
 

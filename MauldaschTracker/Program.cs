@@ -16,7 +16,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var trackerService = new MauldaschTrackerService("Server=127.0.0.1,1433;Database=MauldaschTracker;User Id=sa;Password=!1Start1!;TrustServerCertificate=True;");
+var trackerService = new MauldaschTrackerService(app.Configuration.GetConnectionString("Sql") ?? throw new ArgumentException("Missing SQL connection string"));
 
 app.MapGet("/api/Item/Track", async (Guid item) =>
 {
