@@ -1,0 +1,25 @@
+
+services:
+  app:
+    image: matcher-web
+    build:
+      context: ./MauldaschTracker
+      dockerfile: Dockerfile
+    environment:
+      - "ConnectionStrings__Sql=Server=db,1433;Database=MauldaschTracker;User Id=sa;Password=!1Start1!;TrustServerCertificate=True;"
+    ports: 
+      - 8080:8080
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "127.0.0.1:1433:1433"
+    environment:
+      - "ACCEPT_EULA=Y"
+      - "SA_PASSWORD=!1Start1!"
+    volumes: 
+      - "db:/var/opt/mssql"
+    restart: unless-stopped
+
+volumes:
+  db:
