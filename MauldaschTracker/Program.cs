@@ -88,11 +88,13 @@ app.MapPost("/api/SetPosition", async (SetPositionRequest request) =>
 })
 .WithName("SetPosition");
 
+app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions()
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "wwwroot")),
     RequestPath = ""
 });
+
 
 app.Run("http://+:8080");
 

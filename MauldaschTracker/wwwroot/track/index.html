@@ -5,8 +5,8 @@
         <script type="application/javascript">
             window.addEventListener("load", async () => {
                 try {
-                    const hash = new URLSearchParams(window.location.hash.substring(1));
-                    const item = hash.get('item');
+                    const search = new URLSearchParams(window.location.search.substring(1));
+                    const item = search.get('id');
 
                     const apiParams = new URLSearchParams();
                     apiParams.append("item", item);

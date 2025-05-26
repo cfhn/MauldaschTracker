@@ -401,7 +401,7 @@
         <script id="itemTreeItem" type="text/html">
             <li>
                 <label>
-                    <span data-bind="text: id"></span> | <span data-bind="text: owner"></span> | <span data-bind="text: name"></span>
+                    <a data-bind="text: id, attr: {href: '/track?id='+id}" href="#" target="_blank"></a> | <span data-bind="text: owner"></span> | <span data-bind="text: name"></span>
                 </label>
             </li>
         </script>
