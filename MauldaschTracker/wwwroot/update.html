@@ -76,7 +76,13 @@
                         this.gpsStatus('🤔');
                         this.locationWatch(navigator.geolocation.watchPosition(
                             pos => {
-                                this.location(pos);
+                                const oldLocation = this.location();
+                                if (oldLocation?.coords?.latitude != pos?.coords?.latitude || 
+                                    oldLocation?.coords?.longitude != pos?.coords?.longitude)
+                                {
+                                    this.location(pos);
+                                }
+                                
                                 this.gpsStatus('✅');
                             }, 
                             err => {
