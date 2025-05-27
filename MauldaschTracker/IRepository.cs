@@ -128,7 +128,7 @@ public class MauldaschTrackerService
                 (x.CollectionPath ?? "")
                     .Split('/', StringSplitOptions.RemoveEmptyEntries)
                     .Select(y => Guid.Parse(y))
-                    .Select(y => collections[y])),
+                    .Select(y => collections.TryGetValue(y, out var collName) ? collName : "???")),
             x.Latitude,
             x.Longitude,
             x.Accuracy

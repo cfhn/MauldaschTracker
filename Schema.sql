@@ -29,7 +29,7 @@ CREATE TABLE MauldaschTracker.dbo.TrackingPosition (
 	Latitude decimal(9,6) NULL,
 	Longitude decimal(9,6) NULL,
 	Accuracy decimal(9,1) NULL,
-	CONSTRAINT TrackingPosition_Collection_FK FOREIGN KEY (CollectionId) REFERENCES MauldaschTracker.dbo.Collection(Id),
+	CONSTRAINT TrackingPosition_Collection_FK FOREIGN KEY (CollectionId) REFERENCES MauldaschTracker.dbo.Collection(Id) ON DELETE CASCADE,
 	CONSTRAINT TrackingPosition_Item_FK FOREIGN KEY (ItemId) REFERENCES MauldaschTracker.dbo.Item(Id) ON DELETE CASCADE
 );
 GO
