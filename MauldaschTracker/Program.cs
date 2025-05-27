@@ -51,13 +51,8 @@ app.UseAuthorization();
 
 var trackerService = new MauldaschTrackerService(app.Configuration.GetConnectionString("Sql") ?? throw new ArgumentException("Missing SQL connection string"));
 
-app.MapGet("/api/Item/Track", async (Guid item) =>
+app.MapGet("/api/Item/Track", async (string item) =>
 {
-    // return new TrackingResult(new Item(Guid.NewGuid(), "Max Mustermann", "300kg Stahlofen", "1m³ Platz und 300kg bitte Vale ich brauch den"),
-    //     [
-    //         new TrackingResultItem(DateTime.UtcNow, "LKW", 49, 9)
-    //     ]);
-
     return await trackerService.GetTrackingResult(item);
 })
 .WithName("GetTrackingInfo");
@@ -131,20 +126,20 @@ public record TrackingResult(Item Item, IList<TrackingResultItem> ResultItems);
 public record TrackingResultItem(DateTime Time, string? Collection, decimal? Latitude, decimal? Longitude, decimal? Accuracy);
 public record GetCollectionsResultItem(Guid Id, string Name, Guid? Parent, int Items);
 
-public record GetItemsResultItem(Guid Id, string Owner, string Name);
+public record GetItemsResultItem(string Id, string Owner, string Name);
 public record GetItemsResultCollection(Guid Id, string Name, IList<GetItemsResultCollection> Collections, IList<GetItemsResultItem> Items);
 
 
 public record Collection(Guid Id, string Name, Guid? ParentCollectionId);
-public record Item(Guid Id, string Owner, string Name, string Description, Guid? ParentCollectionId);
-public record TrackingPosition(Guid ItemId, DateTime Time, Guid? CollectionId, decimal? Latitude, decimal? Longitude, decimal? Accuracy);
+public record Item(string Id, string Owner, string Name, string Description, Guid? ParentCollectionId);
+public record TrackingPosition(string ItemId, DateTime Time, Guid? CollectionId, decimal? Latitude, decimal? Longitude, decimal? Accuracy);
 
 
-public record SetCollectionRequest(IList<Guid> Items, IList<Guid> Collections, Guid? ParentCollection);
-public record SetPositionRequest(IList<Guid> Items, IList<Guid> Collections, decimal? Latitude, decimal? Longitude, decimal? Accuracy);
+public record SetCollectionRequest(IList<string> Items, IList<Guid> Collections, Guid? ParentCollection);
+public record SetPositionRequest(IList<string> Items, IList<Guid> Collections, decimal? Latitude, decimal? Longitude, decimal? Accuracy);
 
 public record AddItemsRequest(string Owner, IList<AddItemRequestItem> Items);
 
-public record AddItemRequestItem(string Name, string Description);
+public record AddItemRequestItem(string Id, string Name, string Description);
 public record DeleteCollectionRequest(Guid Id);
 public record AddCollectionRequest(string Name);

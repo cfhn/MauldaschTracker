@@ -15,7 +15,7 @@
                 init() {
                     this.items.removeAll();
                     for (let i = 0; i < 10; i++) {
-                        this.items.push({name: ko.observable(), description: ko.observable()});
+                        this.items.push({id: ko.observable(), name: ko.observable(), description: ko.observable()});
                     }
                 }
 
@@ -26,7 +26,7 @@
                             owner: this.owner(),
                             items: this.items()
                                 .filter(x => x.name() != null && x.name().length > 0)
-                                .map(x => ({name: x.name(), description: x.description()}))
+                                .map(x => ({id: x.id(), name: x.name(), description: x.description()}))
                         };
 
                         const response = await fetch('/api/Item/Add', {
@@ -67,11 +67,15 @@
 
             <table border="1" cellpadding="5">
                 <tr>
+                    <th>Nommer (ID)</th>
                     <th>Was isches</th>
                     <th>Details</th>
                 </tr>
                 <!-- ko foreach: items -->
                 <tr>
+                    <td>
+                        <input data-bind="value: id"></input>
+                    </td>
                     <td>
                         <input data-bind="value: name"></input>
                     </td>

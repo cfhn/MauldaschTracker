@@ -40,7 +40,10 @@ public class MauldaschTrackerService
         {
             foreach (var item in request.Items)
             {
-                await db.ExecuteAsync(sql, new { Id = Guid.NewGuid(), Owner = request.Owner, Name = item.Name, Description = item.Description }, tran);
+                var itemId = item.Id.ToUpperInvariant();
+                if (itemId.Length != 32)
+                    throw new ArgumentException("Ids must be 32 chars long!");
+                await db.ExecuteAsync(sql, new { Id = itemId, Owner = request.Owner, Name = item.Name, Description = item.Description }, tran);
             }
             await tran.CommitAsync();
         }
@@ -93,7 +96,7 @@ public class MauldaschTrackerService
             .ToList();
     }
 
-    public async Task<TrackingResult?> GetTrackingResult(Guid itemId)
+    public async Task<TrackingResult?> GetTrackingResult(string itemId)
     {
         using var db = new SqlConnection(_connectionString);
         db.Open();
@@ -134,11 +137,11 @@ public class MauldaschTrackerService
         return new TrackingResult(item, trackingItems.ToList());
     }
 
-    private async Task<IList<(Guid ItemId, Guid Collection)>> GetItemCollections(IDbConnection db, IDbTransaction? tran = null)
+    private async Task<IList<(string ItemId, Guid Collection)>> GetItemCollections(IDbConnection db, IDbTransaction? tran = null)
     {
         var collectionPerItemSql = @"SELECT Id AS ItemId, ParentCollectionId AS Collection FROM Item WHERE ParentCollectionId IS NOT NULL";
 
-        return (await db.QueryAsync<(Guid ItemId, Guid Collection)>(collectionPerItemSql, transaction: tran)).ToList();
+        return (await db.QueryAsync<(string ItemId, Guid Collection)>(collectionPerItemSql, transaction: tran)).ToList();
     }
 
     private async Task<ISet<Guid>> GetChildCollectionsRecursive(IDbConnection db, IDbTransaction? tran, IEnumerable<Guid> collections)
@@ -208,7 +211,7 @@ public class MauldaschTrackerService
         return string.Join('/', collections.Reverse().Select(x => x.ToString("D")));
     }
 
-    public async Task UpdateLocation(IList<Guid> items, IList<Guid> collections, Guid? targetCollection, decimal? latitude, decimal? longitude, decimal? accuracy)
+    public async Task UpdateLocation(IList<string> items, IList<Guid> collections, Guid? targetCollection, decimal? latitude, decimal? longitude, decimal? accuracy)
     {
         if (targetCollection != null && (latitude != null && longitude != null))
         {
@@ -222,7 +225,7 @@ public class MauldaschTrackerService
 
         using (var tran = await db.BeginTransactionAsync(IsolationLevel.Serializable))
         {
-            var affectedItems = new HashSet<Guid>();
+            var affectedItems = new HashSet<string>();
 
             // update ParentCollection of Item(s)
             var updateItemSql = "UPDATE Item SET ParentCollectionId = @CollectionId WHERE Id = @Id";
