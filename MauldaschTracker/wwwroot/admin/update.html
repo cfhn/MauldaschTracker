@@ -285,6 +285,8 @@
                 }
 
                 async doit() {
+                    if(this.name() == null || this.name() == '')
+                        return;
                     try {
                         this.status('🤔');
                         const response = await fetch('/api/Collection/Add', {
@@ -419,7 +421,7 @@
     <body>
         <form id="update-tracking-form">
             <h2>Ort melda</h2>
-            <p><b>Uffbasse!</b> Glump und Gruppa die selber in 'era Gruppa sin, werded aus d'r Gruppa nausgschmissa beim Ort setza!</p>
+            <p><b>Uffbasse!</b> Gruuschd und Gruppa die selber in 'era Gruppa sin, werded aus d'r Gruppa nausgschmissa beim Ort setza!</p>
             <table border="1" cellpadding="5">
                 <tr>
                     <th>Was?</th>
@@ -429,7 +431,7 @@
                 <tr>
                     <td>
                         <ul data-bind="template: { name: 'collectionSourceTreeElement', foreach: $data.collectionSourceTree }"></ul>
-                        <label>Glump (IDs/URLs)<br><textarea rows="10" cols="50" data-bind="value: itemIds"></textarea></label>
+                        <label>Gruuschd (IDs/URLs)<br><textarea rows="10" cols="50" data-bind="value: itemIds"></textarea></label>
                     </td>
                     <td>
                         <button data-bind="click: () => updatePositionOnce(), visible: locationWatch() == null">Oi mol setza!</button><br>
@@ -450,43 +452,43 @@
         </form>
 
         <form id="move-form">
-            <h2>Glump umlada</h2>
+            <h2>Gruuschd umlada</h2>
             <table border="1" cellpadding="5">
                 <tr>
                     <th>Was?</th>
-                    <th>Wohin?</th>
-                    <th>Abfahrt?</th>
+                    <th>Wo nâ?</th>
+                    <th>Gwieß?</th>
                 </tr>
                 <tr>
                     <td>
                         <ul data-bind="template: { name: 'collectionSourceTreeElement', foreach: $data.collectionSourceTree }"></ul>
-                        <label>Glump (IDs/URLs)<br><textarea rows="10" cols="50" data-bind="value: itemIds"></textarea></label>
+                        <label>Gruuschd (IDs/URLs)<br><textarea rows="10" cols="50" data-bind="value: itemIds"></textarea></label>
                     </td>
                     <td id="">
                         <ul data-bind="template: { name: 'targetTreeElement', foreach: $data.targetTree }"></ul>
                     </td>
-                    <td><button data-bind="click: () => doit()">Abfahrt!</button><span data-bind="text: status"></span></td>
+                    <td><button data-bind="click: () => doit()">Umlada!</button><span data-bind="text: status"></span></td>
                 </tr>
             </table>
         </form>
 
         <form id="show-items-form">
-            <h2>Glump</h2>
+            <h2>Gruuschd</h2>
             <ul data-bind="template: { name: 'itemTreeCollection', data: $data.itemTree, if: $data.itemTree }"></ul>
         </form>
 
         <form id="add-form">
-            <h2>Gruppa olega</h2>
+            <h2>Gruppa âlega</h2>
             <table border="1" cellpadding="5">
                 <tr>
                     <th>Name</th>
-                    <th>Abfahrt?</th>
+                    <th>Gwieß?</th>
                 </tr>
                 <tr>
                     <td>
                         <input data-bind="value: name"></input>
                     </td>
-                    <td><button data-bind="click: () => doit()">Abfahrt!</button><span data-bind="text: status"></span></td>
+                    <td><button data-bind="click: () => doit()">Âlega!</button><span data-bind="text: status"></span></td>
                 </tr>
             </table>
         </form>
@@ -496,14 +498,14 @@
             <table border="1" cellpadding="5">
                 <tr>
                     <th>Name</th>
-                    <th>Abfahrt?</th>
+                    <th>Gwieß?</th>
                 </tr>
                 <!-- ko foreach: items -->
                 <tr>
                     <td>
                         <span data-bind="text: name"></span>
                     </td>
-                    <td><button data-bind="click: () => $parent.doit($data)">🗑️Abfahrt!🗑️</button><span data-bind="text: status"></span></td>
+                    <td><button data-bind="click: () => $parent.doit($data)">Schmeiß fort!🗑️</button><span data-bind="text: status"></span></td>
                 </tr>
                 <!-- /ko -->
             </table>
