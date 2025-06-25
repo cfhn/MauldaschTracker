@@ -49,6 +49,30 @@ public class MauldaschTrackerService
         }
     }
 
+    public async Task UpdateOrAddItems(IList<LuggageItem> items)
+    {
+        var insertSql = "INSERT INTO Item (Id, Owner, Name, Description) VALUES (@Id, @Owner, @Name, @Description)";
+        var updateSql = "UPDATE Item SET Owner = @Owner, Name = @Name, Description = @Description WHERE Id = @Id";
+        using var db = new SqlConnection(_connectionString);
+        db.Open();
+
+        using (var tran = await db.BeginTransactionAsync(IsolationLevel.Serializable))
+        {
+            foreach (var item in items)
+            {
+                var itemId = item.ItemId.ToUpperInvariant();
+                if (itemId.Length != 32)
+                    throw new ArgumentException("Ids must be 32 chars long!");
+                var updated = await db.ExecuteAsync(updateSql, new { Id = itemId, Owner = item.Nickname, Name = item.Name, Description = item.Description }, tran);
+                if (updated == 0)
+                {
+                    await db.ExecuteAsync(insertSql, new { Id = itemId, Owner = item.Nickname, Name = item.Name, Description = item.Description }, tran);
+                }
+            }
+            await tran.CommitAsync();
+        }
+    }
+
     public async Task<GetItemsResultCollection> GetItems()
     {
         using var db = new SqlConnection(_connectionString);

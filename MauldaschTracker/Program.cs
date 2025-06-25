@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using idunno.Authentication.Basic;
+using MauldaschTracker;
+using MauldaschTracker.PretixApi;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,6 +39,13 @@ builder.Services.AddAuthentication(BasicAuthenticationDefaults.AuthenticationSch
     });
 builder.Services.AddAuthorization();
 
+builder.Services.Configure<PretixConfig>(builder.Configuration.GetSection("PretixApi"));
+
+builder.Services.AddSingleton(x => new MauldaschTrackerService(builder.Configuration.GetConnectionString("Sql") ?? throw new ArgumentException("Missing SQL connection string")));
+
+builder.Services.AddTransient<PretixApiClient>();
+builder.Services.AddHostedService<PretixSyncService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -49,7 +58,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-var trackerService = new MauldaschTrackerService(app.Configuration.GetConnectionString("Sql") ?? throw new ArgumentException("Missing SQL connection string"));
+var trackerService = app.Services.GetRequiredService<MauldaschTrackerService>();
 
 app.MapGet("/api/Item/Track", async (string item) =>
 {
@@ -139,7 +148,10 @@ public record SetCollectionRequest(IList<string> Items, IList<Guid> Collections,
 public record SetPositionRequest(IList<string> Items, IList<Guid> Collections, decimal? Latitude, decimal? Longitude, decimal? Accuracy);
 
 public record AddItemsRequest(string Owner, IList<AddItemRequestItem> Items);
+public record UpdateItems(IList<AddItemRequestItem> Items);
 
 public record AddItemRequestItem(string Id, string Name, string Description);
 public record DeleteCollectionRequest(Guid Id);
 public record AddCollectionRequest(string Name);
+
+public record LuggageItem(string ItemId, string Nickname, string Name, string Description);
