@@ -21,7 +21,7 @@ public class PretixApiClient
 
     public async Task<IList<LuggageItem>> GetLuggageItems()
     {
-        var url = $"/api/v1/organizers/{_config.Organizer}/events/{_config.Event}/orders/?testmode=false&item={_config.ItemId}"; //TODO: only include necessary fields
+        var url = $"/api/v1/organizers/{_config.Organizer}/events/{_config.Event}/orders/?testmode=false&item={_config.ItemId}&status=p&include=positions.item&include=positions.secret&include=positions.answers";
 
         var toReturn = new List<LuggageItem>();
 
