@@ -120,6 +120,15 @@ public class MauldaschTrackerService
             .ToList();
     }
 
+    public async Task<GetCollectionResult?> GetCollection(Guid collectionId)
+    {
+        using var db = new SqlConnection(_connectionString);
+        db.Open();
+        var sql = "SELECT Id, Name FROM Collection WHERE Id = @Id";
+        var res = await db.QueryFirstOrDefaultAsync<GetCollectionResult>(sql, new { Id = collectionId });
+        return res;
+    }
+
     public async Task<TrackingResult?> GetTrackingResult(string itemId)
     {
         using var db = new SqlConnection(_connectionString);

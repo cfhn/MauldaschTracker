@@ -411,7 +411,7 @@
         <script id="itemTreeCollection" type="text/html">
             <li>
                 <label>
-                    <span data-bind="text: name"></span>
+                    <span data-bind="text: name"></span> | <span data-bind="text: id"></span>
                 </label>
                 <ul data-bind="template: { name: 'itemTreeCollection', foreach: collections }"></ul>
                 <ul data-bind="template: { name: 'itemTreeItem', foreach: items }"></ul>

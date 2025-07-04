@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script type="application/javascript" src="/knockout-3.5.1.js"></script>
+        <script type="application/javascript">
+
+            class MoveFormModel {
+                constructor() {
+                    this.status = ko.observable('');
+                    this.itemIds = ko.observable();
+
+                    this.targetSelectorText = ko.observable('');
+                    this.selectedTarget = ko.observable(null);
+
+                    this.itemSelectorText = ko.observable('');
+
+                    this.queue = ko.observableArray();
+                }
+
+                targetSelectorKeyPress(d, e) {
+                    if (e.keyCode === 13) {
+                        const targetText = this.targetSelectorText();
+                        this.targetSelect(targetText);
+                    }
+                    return true;
+                }
+
+                async targetSelect(text) {
+                    this.targetSelectorText('...');
+                    if(text == '00000000-0000-0000-0000-000000000000') {
+                        this.targetSelectorText('Irgendwo (einzeln)');
+                        this.selectedTarget('00000000-0000-0000-0000-000000000000');
+                        return;
+                    }
+
+                    try {
+                        let data = {
+                            id: text,
+                        };
+
+                        const response = await fetch('/api/Collection/Get', {
+                            method: 'POST',
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+                        const collectionData = await response.json();
+                        if (collectionData == null)
+                            throw new Error('Not found');
+                        this.targetSelectorText(collectionData.name);
+                        this.selectedTarget(collectionData.id);
+                    } catch (error) {
+                        alert('Des glomp isch hee:\n' + error);
+                    }
+                }
+
+                init() {
+                    //this.status('');
+
+                    this.itemIds('');
+                    this.targetSelectorText('');
+                    this.selectedTarget(null);
+                    this.queue([]);
+                }
+
+                itemSelectorKeyPress(d, e) {
+                    if (e.keyCode === 13) {
+                        const itemText = this.itemSelectorText();
+                        this.itemSelectorText('');
+
+                        const target = this.selectedTarget();
+                        this.moveItem(itemText, target);
+                    }
+                    return true;
+                }
+
+                async moveItem(itemText, targetId) {
+                    try {
+                        const items = itemText.match(/[0-9A-Z]{32}/g) ?? [];
+                        const collections = itemText.match(/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/g) ?? [];
+
+                        if([...items, ...collections].length == 0)
+                            return;
+
+                        let queueItem = {
+                            id: ko.observable([...items, ...collections].join()),
+                            status: ko.observable('🤔'),
+                        };
+
+                        if (this.queue.unshift(queueItem) > 3)
+                            this.queue.pop();
+
+                        if (targetId == null)
+                        {
+                            throw new Error('ja wo no denn?');
+                        }
+
+                        let data = {
+                            items: items ?? [],
+                            collections: collections ?? [],
+                            parentCollection: targetId == '00000000-0000-0000-0000-000000000000' ? null : targetId
+                        };
+
+                        const response = await fetch('/api/SetCollection', {
+                            method: 'POST',
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(data)
+                        });
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+                        queueItem.status('✅');
+                    } catch (error) {
+                        alert('Des glomp isch hee:\n' + error);
+                        queueItem.status('❌');
+                    }
+                }
+            }
+
+            const moveModel = new MoveFormModel();
+
+            async function resetViews() {
+                moveModel.init();
+            }
+
+            window.addEventListener("load", async () => {
+                ko.applyBindings(moveModel, document.getElementById('move-form'));
+
+                await resetViews();
+            });
+        </script>
+
+
+        <script id="targetTreeElement" type="text/html">
+            <li>
+                <label>
+                    <input type="radio" name="target-tree" data-bind="checked: checked, enable: enabled">
+                    <span data-bind="text: name"></span>
+                </label>
+                <ul data-bind="template: { name: 'targetTreeElement', foreach: children }">
+                </ul>
+            </li>
+        </script>
+        <style>
+            #move-form {
+                display: flex;
+                flex-direction: column;
+                align-content: stretch;
+            }
+            .form-item {
+                display: flex;
+                flex-direction: column;
+                align-content: stretch;
+            }
+        </style>
+    </head>
+    <body>
+        <form id="move-form">
+            <h2>Gruuschd umlada</h2>
+            <div class="form-item">
+                <button type="button" data-bind="click: () => init()">Z'rücksetza</button>
+            </div>
+            <div class="form-item">
+                <h3>Wo nâ?</h3>
+                <input type="text" data-bind="textInput: targetSelectorText, enable: selectedTarget() == null, event: { keyup: targetSelectorKeyPress }" />
+            </div>
+            <div class="form-item">
+                <h3>Was?</h3>
+                <input type="text" data-bind="textInput: itemSelectorText, disable: selectedTarget() == null, event: { keyup: itemSelectorKeyPress }" />
+            </div>
+            <div class="form-item">
+                <h3>Status</h3>
+                <table border="1" cellpadding="5" style="table-layout: fixed;">
+                    <tbody>
+                    <!-- ko foreach: queue -->
+                        <tr>
+                            <td style="overflow: hidden; text-overflow: ellipsis;">
+                                <span data-bind="text: id" style="text-overflow: ellipsis;"></span>
+                            </td>
+                            <td style="width: 20px;">
+                                <span data-bind="text: status"></span>
+                            </td>
+                        </tr>
+                    <!-- /ko -->
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </body>
+</html>

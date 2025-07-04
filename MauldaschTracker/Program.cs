@@ -89,6 +89,13 @@ app.MapGet("/api/Collection/GetList", async () =>
 .WithName("GetCollections")
 .RequireAuthorization();
 
+app.MapPost("/api/Collection/Get", async (GetCollectionRequest request) =>
+{
+    return await trackerService.GetCollection(request.Id);
+})
+.WithName("GetCollection")
+.RequireAuthorization();
+
 app.MapPost("/api/Collection/Add", async (AddCollectionRequest request) =>
 {
     await trackerService.AddCollection(request.Name);
@@ -134,6 +141,7 @@ app.Run("http://+:8080");
 public record TrackingResult(Item Item, IList<TrackingResultItem> ResultItems);
 public record TrackingResultItem(DateTime Time, string? Collection, decimal? Latitude, decimal? Longitude, decimal? Accuracy);
 public record GetCollectionsResultItem(Guid Id, string Name, Guid? Parent, int Items);
+public record GetCollectionResult(Guid Id, string Name);
 
 public record GetItemsResultItem(string Id, string Owner, string Name);
 public record GetItemsResultCollection(Guid Id, string Name, IList<GetItemsResultCollection> Collections, IList<GetItemsResultItem> Items);
@@ -153,5 +161,6 @@ public record UpdateItems(IList<AddItemRequestItem> Items);
 public record AddItemRequestItem(string Id, string Name, string Description);
 public record DeleteCollectionRequest(Guid Id);
 public record AddCollectionRequest(string Name);
+public record GetCollectionRequest(Guid Id);
 
 public record LuggageItem(string ItemId, string Nickname, string Name, string Description);
