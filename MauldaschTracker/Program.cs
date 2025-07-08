@@ -66,6 +66,13 @@ app.MapGet("/api/Item/Track", async (string item) =>
 })
 .WithName("GetTrackingInfo");
 
+app.MapGet("/api/Dummy", () =>
+{
+    return Results.Ok();
+})
+.WithName("Dummy")
+.RequireAuthorization();
+
 app.MapPost("/api/Item/Add", async (AddItemsRequest request) =>
 {
     await trackerService.AddItems(request);

@@ -141,6 +141,16 @@
                 ko.applyBindings(moveModel, document.getElementById('move-form'));
 
                 await resetViews();
+
+                // do request to admin API to prompt for password
+                try {
+                    const response = await fetch('/api/Dummy');
+                    if (!response.ok) {
+                        throw new Error(`Response status: ${response.status}`);
+                    }
+                } catch (error) {
+                    alert('Des glomp isch hee:\n' + error);
+                }
             });
         </script>
 
