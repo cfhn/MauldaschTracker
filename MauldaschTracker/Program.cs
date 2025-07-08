@@ -115,7 +115,8 @@ app.MapPost("/api/Collection/Delete", async (DeleteCollectionRequest request) =>
 app.MapPost("/api/SetCollection", async (SetCollectionRequest request) =>
 {
     await trackerService.UpdateLocation(request.Items, request.Collections, request.ParentCollection, null, null, null);
-    return Results.Ok();
+    var names = await trackerService.GetNames(request.Items, request.Collections);
+    return Results.Ok(names);
 })
 .WithName("SetCollection")
 .RequireAuthorization();

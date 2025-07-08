@@ -17,6 +17,8 @@
                     this.itemSelectorText = ko.observable('');
 
                     this.queue = ko.observableArray();
+
+                    this.focus = ko.observable(0);
                 }
 
                 targetSelectorKeyPress(d, e) {
@@ -55,6 +57,7 @@
                             throw new Error('Not found');
                         this.targetSelectorText(collectionData.name);
                         this.selectedTarget(collectionData.id);
+                        this.focus(1);
                     } catch (error) {
                         alert('Des glomp isch hee:\n' + error);
                     }
@@ -67,6 +70,7 @@
                     this.targetSelectorText('');
                     this.selectedTarget(null);
                     this.queue([]);
+                    this.focus(0);
                 }
 
                 itemSelectorKeyPress(d, e) {
@@ -81,21 +85,21 @@
                 }
 
                 async moveItem(itemText, targetId) {
+                    const items = itemText.match(/[0-9A-Z]{32}/g) ?? [];
+                    const collections = itemText.match(/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/g) ?? [];
+
+                    if([...items, ...collections].length == 0)
+                        return;
+
+                    let queueItem = {
+                        text: ko.observable([...items, ...collections].join(', ') + ' -> ' + this.targetSelectorText()),
+                        status: ko.observable('🤔'),
+                    };
+
+                    if (this.queue.unshift(queueItem) > 3)
+                        this.queue.pop();
+
                     try {
-                        const items = itemText.match(/[0-9A-Z]{32}/g) ?? [];
-                        const collections = itemText.match(/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/g) ?? [];
-
-                        if([...items, ...collections].length == 0)
-                            return;
-
-                        let queueItem = {
-                            id: ko.observable([...items, ...collections].join()),
-                            status: ko.observable('🤔'),
-                        };
-
-                        if (this.queue.unshift(queueItem) > 3)
-                            this.queue.pop();
-
                         if (targetId == null)
                         {
                             throw new Error('ja wo no denn?');
@@ -117,6 +121,8 @@
                         if (!response.ok) {
                             throw new Error(`Response status: ${response.status}`);
                         }
+                        const names = await response.json();
+                        queueItem.text((names.join(', ') + ' -> ' + this.targetSelectorText()));
                         queueItem.status('✅');
                     } catch (error) {
                         alert('Des glomp isch hee:\n' + error);
@@ -170,11 +176,11 @@
             </div>
             <div class="form-item">
                 <h3>Wo nâ?</h3>
-                <input type="text" data-bind="textInput: targetSelectorText, enable: selectedTarget() == null, event: { keyup: targetSelectorKeyPress }" />
+                <input type="text" data-bind="textInput: targetSelectorText, enable: selectedTarget() == null, event: { keyup: targetSelectorKeyPress }, hasFocus: focus() == 0" />
             </div>
             <div class="form-item">
                 <h3>Was?</h3>
-                <input type="text" data-bind="textInput: itemSelectorText, disable: selectedTarget() == null, event: { keyup: itemSelectorKeyPress }" />
+                <input type="text" data-bind="textInput: itemSelectorText, disable: selectedTarget() == null, event: { keyup: itemSelectorKeyPress }, hasFocus: focus() == 1" />
             </div>
             <div class="form-item">
                 <h3>Status</h3>
@@ -183,7 +189,7 @@
                     <!-- ko foreach: queue -->
                         <tr>
                             <td style="overflow: hidden; text-overflow: ellipsis;">
-                                <span data-bind="text: id" style="text-overflow: ellipsis;"></span>
+                                <span data-bind="text: text" style="text-overflow: ellipsis;"></span>
                             </td>
                             <td style="width: 20px;">
                                 <span data-bind="text: status"></span>
