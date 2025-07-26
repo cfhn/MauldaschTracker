@@ -40,7 +40,7 @@ public class MauldaschTrackerService
         {
             foreach (var item in request.Items)
             {
-                var itemId = item.Id.ToUpperInvariant();
+                var itemId = item.Id;
                 if (itemId.Length != 32)
                     throw new ArgumentException("Ids must be 32 chars long!");
                 await db.ExecuteAsync(sql, new { Id = itemId, Owner = request.Owner, Name = item.Name, Description = item.Description }, tran);
@@ -60,7 +60,7 @@ public class MauldaschTrackerService
         {
             foreach (var item in items)
             {
-                var itemId = item.ItemId.ToUpperInvariant();
+                var itemId = item.ItemId;
                 if (itemId.Length != 32)
                     throw new ArgumentException("Ids must be 32 chars long!");
                 var updated = await db.ExecuteAsync(updateSql, new { Id = itemId, Owner = item.Nickname, Name = item.Name, Description = item.Description }, tran);

@@ -85,7 +85,7 @@
                 }
 
                 async moveItem(itemText, targetId) {
-                    const items = itemText.match(/[0-9A-Z]{32}/g) ?? [];
+                    const items = itemText.match(/[0-9a-z]{32}/g) ?? [];
                     const collections = itemText.match(/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/g) ?? [];
 
                     if([...items, ...collections].length == 0)

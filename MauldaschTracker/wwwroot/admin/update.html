@@ -107,7 +107,7 @@
                             return;
                         this.status('🤔');
 
-                        const ids = (this.itemIds() ?? '').match(/[0-9A-Z]{32}/g);
+                        const ids = (this.itemIds() ?? '').match(/[0-9a-z]{32}/g);
 
                         let data = {
                             items: ids ?? [],
@@ -221,7 +221,7 @@
                     try {
                         this.status('🤔');
 
-                        const ids = (this.itemIds() ?? '').match(/[0-9A-Z]{32}/g);
+                        const ids = (this.itemIds() ?? '').match(/[0-9a-z]{32}/g);
 
                         const targetId = this.getActiveTargetId(this.targetTree());
                         if (targetId == null)
