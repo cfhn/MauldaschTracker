@@ -78,7 +78,7 @@ public class MauldaschTrackerService
         using var db = new SqlConnection(_connectionString);
         db.Open();
 
-        var topItems = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId IS NULL ORDER BY Name ASC");
+        var topItems = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId IS NULL ORDER BY Owner ASC, Name ASC");
         var topCollections = await db.QueryAsync<(Guid Id, string Name)>("SELECT Id, Name FROM Collection WHERE ParentCollectionId IS NULL ORDER BY Name ASC");
 
         var topCollectionResults = new List<GetItemsResultCollection>();
@@ -92,7 +92,7 @@ public class MauldaschTrackerService
 
     private async Task<GetItemsResultCollection> GetItemsInternal(SqlConnection db, Guid id, string name)
     {
-        var items = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId = @Id ORDER BY Name ASC", new { Id = id });
+        var items = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId = @Id ORDER BY Owner ASC, Name ASC", new { Id = id });
         var collections = await db.QueryAsync<(Guid Id, string Name)>("SELECT Id, Name FROM Collection WHERE ParentCollectionId = @Id ORDER BY Name ASC", new { Id = id });
 
         var collectionResults = new List<GetItemsResultCollection>();
