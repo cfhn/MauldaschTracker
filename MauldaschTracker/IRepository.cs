@@ -78,8 +78,8 @@ public class MauldaschTrackerService
         using var db = new SqlConnection(_connectionString);
         db.Open();
 
-        var topItems = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId IS NULL");
-        var topCollections = await db.QueryAsync<(Guid Id, string Name)>("SELECT Id, Name FROM Collection WHERE ParentCollectionId IS NULL");
+        var topItems = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId IS NULL ORDER BY Name ASC");
+        var topCollections = await db.QueryAsync<(Guid Id, string Name)>("SELECT Id, Name FROM Collection WHERE ParentCollectionId IS NULL ORDER BY Name ASC");
 
         var topCollectionResults = new List<GetItemsResultCollection>();
         foreach (var collection in topCollections)
@@ -92,8 +92,8 @@ public class MauldaschTrackerService
 
     private async Task<GetItemsResultCollection> GetItemsInternal(SqlConnection db, Guid id, string name)
     {
-        var items = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId = @Id", new { Id = id });
-        var collections = await db.QueryAsync<(Guid Id, string Name)>("SELECT Id, Name FROM Collection WHERE ParentCollectionId = @Id", new { Id = id });
+        var items = await db.QueryAsync<GetItemsResultItem>("SELECT Id, Owner, Name FROM Item WHERE ParentCollectionId = @Id ORDER BY Name ASC", new { Id = id });
+        var collections = await db.QueryAsync<(Guid Id, string Name)>("SELECT Id, Name FROM Collection WHERE ParentCollectionId = @Id ORDER BY Name ASC", new { Id = id });
 
         var collectionResults = new List<GetItemsResultCollection>();
 
@@ -109,7 +109,7 @@ public class MauldaschTrackerService
     {
         using var db = new SqlConnection(_connectionString);
         db.Open();
-        var sql = "SELECT Id, Name, ParentCollectionId FROM Collection";
+        var sql = "SELECT Id, Name, ParentCollectionId FROM Collection ORDER BY Name ASC";
         var res = (await db.QueryAsync<(Guid Id, string Name, Guid? ParentCollectionId)>(sql)).ToList();
         var itemCollections = (await GetItemCollections(db))
             .GroupBy(x => x.Collection)
