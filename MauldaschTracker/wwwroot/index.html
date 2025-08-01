@@ -11,7 +11,7 @@
                 }
 
                 doit() {
-                    let itemArray = this.itemIds().match(/[0-9a-z]{32}/g) ?? [];
+                    let itemArray = (this.itemIds() ?? '').match(/[0-9a-z]{32}/g) ?? [];
 
                     const apiParams = new URLSearchParams();
                     apiParams.append("ids", itemArray.join(','));
