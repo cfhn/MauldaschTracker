@@ -8,6 +8,8 @@
                     const search = new URLSearchParams(window.location.search.substring(1));
                     const item = search.get('id');
 
+                    document.getElementById('multi-tracking-link').setAttribute('href', `/track/multi.html?ids=${item}`);
+
                     const apiParams = new URLSearchParams();
                     apiParams.append("item", item);
 
@@ -59,6 +61,7 @@
         </style>
     </head>
     <body>
+        <a id="multi-tracking-link">Zum Multi-Glump-Tracking</a>
         <h2>Glomp</h2>
         <table border="1" cellpadding="5">
             <tr>

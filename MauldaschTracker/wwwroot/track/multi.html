@@ -77,7 +77,7 @@
                 <!-- ko foreach: items -->
                 <tr>
                     <td>
-                        <a data-bind="text: itemId, attr: {href: '/track?id='+itemId}"></a>
+                        <a data-bind="text: itemId, attr: {href: '/track?id='+itemId}" target="_blank"></a>
                     </td>
                     <td>
                         <span data-bind="text: itemName"></span>
@@ -97,7 +97,7 @@
             </table>
         </div>
 
-        <h2>No mehr Glomp</h2>
+        <h2>No mehr Glomp neihaua</h2>
         <form id="add-tracking-item">
             <label>Tracking ID (aaaabbbbccccddddeeeeffffgggghhhh): <input type="text" data-bind="value: item"></label>
             <button data-bind="click: () => doit()">Au no Âgugga!</button>
