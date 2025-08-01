@@ -11,7 +11,7 @@
                 }
 
                 doit() {
-                    let itemArray = (this.itemIds() ?? '').match(/[0-9a-z]{32}/g);
+                    let itemArray = this.itemIds().match(/[0-9a-z]{32}/g) ?? [];
 
                     const apiParams = new URLSearchParams();
                     apiParams.append("ids", itemArray.join(','));
@@ -39,5 +39,8 @@
             <textarea name="ids" rows="10" cols="32" data-bind="value: itemIds"></textarea><br>
             <button data-bind="click: () => doit()">Track!</button>
         </form>
+        <br>
+        <br>
+        <small>0% LLM, 100% Menschlicher Pfusch</small>
     </body>
 </html>
