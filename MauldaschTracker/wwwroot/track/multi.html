@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script type="application/javascript" src="/knockout-3.5.1.js"></script>
+        <script type="application/javascript">
+            class MultiTrackingModel
+            {
+                constructor() {
+                    this.items = ko.observableArray();
+                }
+
+                async init() {
+                    try {
+                        const search = new URLSearchParams(window.location.search.substring(1));
+                        const items = search.get('ids');
+
+                        const apiParams = new URLSearchParams();
+                        apiParams.append("items", items);
+
+                        const response = await fetch(`/api/Item/MultiTrack?${apiParams}`);
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+
+                        this.items(await response.json());
+                    } catch (error) {
+                        alert('Des glomp isch hee:\n' + error);
+                    }
+                }
+            }
+
+            class AddTrackingItemModel
+            {
+                constructor() {
+                    this.item = ko.observable();
+                }
+
+                doit() {
+                    const search = new URLSearchParams(window.location.search.substring(1));
+                    const items = search.get('ids') ?? '';
+
+                    let itemArray = items.split(',');
+                    itemArray.push(this.item());
+
+                    const apiParams = new URLSearchParams();
+                    apiParams.append("ids", itemArray.join(','));
+
+                    window.location.href = `/track/multi.html?${apiParams}`;
+                }
+            }
+
+            window.addEventListener("load", async () => {
+                    const multiTrackingModel = new MultiTrackingModel();
+                    multiTrackingModel.init();
+                    ko.applyBindings(multiTrackingModel, document.getElementById('main-table'));
+
+                    const addItemModel = new AddTrackingItemModel();
+                    ko.applyBindings(addItemModel, document.getElementById('add-tracking-item'));
+            });
+        </script>
+
+        <style>
+        </style>
+    </head>
+    <body>
+        <h2>Glomp</h2>
+        <div id="main-table">
+            <table id="" border="1" cellpadding="5">
+                <tr>
+                    <th>Nommer</th>
+                    <th>Was isches?</th>
+                    <th>Wo isches?</th>
+                    <th>Wo isches genau?</th>
+                    <th>Seit wann?</th>
+                </tr>
+                <!-- ko foreach: items -->
+                <tr>
+                    <td>
+                        <a data-bind="text: itemId, attr: {href: '/track?id='+itemId}"></a>
+                    </td>
+                    <td>
+                        <span data-bind="text: itemName"></span>
+                    </td>
+                    <td>
+                        <span data-bind="text: collectionPath"></span>
+                    </td>
+                    <td>
+                        <a data-bind="visible: latitude != null, text: `${latitude} ${longitude} ${accuracy != null ? `(${accuracy.toFixed(0)}m)` : ''}`, attrs: {href: `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=11/${latitude}/${longitude}`}"></a>
+                        <span data-bind="visible: latitude == null">🤷</span>
+                    </td>
+                    <td>
+                        <span data-bind="text: new Date(time).toLocaleString()"></span>
+                    </td>
+                </tr>
+                <!-- /ko -->
+            </table>
+        </div>
+
+        <h2>No mehr Glomp</h2>
+        <form id="add-tracking-item">
+            <label>Tracking ID (aaaabbbbccccddddeeeeffffgggghhhh): <input type="text" data-bind="value: item"></label>
+            <button data-bind="click: () => doit()">Au no Âgugga!</button>
+        </form>
+    </body>
+</html>

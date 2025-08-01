@@ -66,6 +66,12 @@ app.MapGet("/api/Item/Track", async (string item) =>
 })
 .WithName("GetTrackingInfo");
 
+app.MapGet("/api/Item/MultiTrack", async (string items) =>
+{
+    return await trackerService.GetMultiTrackingResult(items.Split(','));
+})
+.WithName("GetMultiTrackingInfo");
+
 app.MapGet("/api/Dummy", () =>
 {
     return Results.Ok();
@@ -148,6 +154,9 @@ app.Run("http://+:8080");
 
 public record TrackingResult(Item Item, IList<TrackingResultItem> ResultItems);
 public record TrackingResultItem(DateTime Time, string? Collection, decimal? Latitude, decimal? Longitude, decimal? Accuracy);
+
+public record MultiTrackingResultItem(string ItemId, string ItemName, DateTime? Time, string? CollectionPath, decimal? Latitude, decimal? Longitude, decimal? Accuracy);
+
 public record GetCollectionsResultItem(Guid Id, string Name, Guid? Parent, int Items);
 public record GetCollectionResult(Guid Id, string Name);
 

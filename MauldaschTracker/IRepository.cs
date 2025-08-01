@@ -183,6 +183,64 @@ public class MauldaschTrackerService
         return new TrackingResult(item, trackingItems.ToList());
     }
 
+    public async Task<IList<MultiTrackingResultItem>?> GetMultiTrackingResult(IList<string> itemIds)
+    {
+        using var db = new SqlConnection(_connectionString);
+        db.Open();
+
+        var sql = @"
+        SELECT
+            Item.Id AS ItemId,
+            Item.Name AS ItemName,
+            TrackingPosition.Time,
+            TrackingPosition.CollectionPath,
+            TrackingPosition.Latitude,
+            TrackingPosition.Longitude,
+            TrackingPosition.Accuracy
+        FROM Item
+        CROSS APPLY
+        (
+            SELECT TOP 1
+                *
+            FROM TrackingPosition
+            WHERE TrackingPosition.ItemId = Item.Id
+            ORDER BY TrackingPosition.[Time] DESC
+        ) AS TrackingPosition
+        WHERE 
+            Item.Id IN @Ids";
+
+        var items = await db.QueryAsync<MultiTrackingResultItem>(sql, new { Ids = itemIds });
+        if (items == null)
+            return null;
+
+        var collectionSql = "SELECT Id, Name FROM Collection"; // TODO: filter
+        var collections = (await db.QueryAsync<(Guid Id, string Name)>(collectionSql)).ToDictionary(x => x.Id, x => x.Name);
+
+        var toReturn = new List<MultiTrackingResultItem>();
+        foreach (var item in items)
+        {
+            string? collectionPath = null;
+            if (item.CollectionPath != null)
+            {
+                collectionPath = string.Join('/',
+                    item.CollectionPath
+                        .Split('/', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(y => Guid.Parse(y))
+                        .Select(y => collections.TryGetValue(y, out var collName) ? collName : "???"));
+            }
+            toReturn.Add(new MultiTrackingResultItem(
+                item.ItemId,
+                item.ItemName,
+                item.Time,
+                collectionPath,
+                item.Latitude,
+                item.Longitude,
+                item.Accuracy
+            ));
+        }
+        return toReturn;
+    }
+
     private async Task<IList<(string ItemId, Guid Collection)>> GetItemCollections(IDbConnection db, IDbTransaction? tran = null)
     {
         var collectionPerItemSql = @"SELECT Id AS ItemId, ParentCollectionId AS Collection FROM Item WHERE ParentCollectionId IS NOT NULL";

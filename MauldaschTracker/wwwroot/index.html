@@ -2,13 +2,42 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <style>
-        </style>
+        <script type="application/javascript" src="/knockout-3.5.1.js"></script>
+        <script type="application/javascript">
+            class AddTrackingItemModel
+            {
+                constructor() {
+                    this.itemIds = ko.observable();
+                }
+
+                doit() {
+                    let itemArray = (this.itemIds() ?? '').match(/[0-9a-z]{32}/g);
+
+                    const apiParams = new URLSearchParams();
+                    apiParams.append("ids", itemArray.join(','));
+
+                    window.location.href = `/track/multi.html?${apiParams}`;
+                }
+            }
+
+            window.addEventListener("load", async () => {
+                const addItemModel = new AddTrackingItemModel();
+                ko.applyBindings(addItemModel, document.getElementById('multi-tracking'));
+            });
+        </script>
     </head>
     <body>
+        <h2>Detail-Tracking</h2>
         <form action="/track" method="get">
             <label>Tracking ID (aaaabbbbccccddddeeeeffffgggghhhh): <input name="id" type="text"></label>
             <button type="submit">Track!</button>
+        </form>
+
+        <h2>Multi-Tracking</h2>
+        <form id="multi-tracking">
+            <label>Tracking IDs (aaaabbbbccccddddeeeeffffgggghhhh):<br>
+            <textarea name="ids" rows="10" cols="32" data-bind="value: itemIds"></textarea><br>
+            <button data-bind="click: () => doit()">Track!</button>
         </form>
     </body>
 </html>
