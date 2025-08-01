@@ -122,8 +122,13 @@
                             throw new Error(`Response status: ${response.status}`);
                         }
                         const names = await response.json();
-                        queueItem.text((names.join(', ') + ' -> ' + this.targetSelectorText()));
-                        queueItem.status('✅');
+                        if (names == '') {
+                            queueItem.text('??? -> ' + this.targetSelectorText());
+                            queueItem.status('❌');
+                        } else {
+                            queueItem.text((names.join(', ') + ' -> ' + this.targetSelectorText()));
+                            queueItem.status('✅');
+                        }
                     } catch (error) {
                         alert('Des glomp isch hee:\n' + error);
                         queueItem.status('❌');
