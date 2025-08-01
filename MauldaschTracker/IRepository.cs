@@ -198,7 +198,7 @@ public class MauldaschTrackerService
             TrackingPosition.Longitude,
             TrackingPosition.Accuracy
         FROM Item
-        CROSS APPLY
+        OUTER APPLY
         (
             SELECT TOP 1
                 *

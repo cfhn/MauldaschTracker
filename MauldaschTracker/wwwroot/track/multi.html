@@ -83,14 +83,14 @@
                         <span data-bind="text: itemName"></span>
                     </td>
                     <td>
-                        <span data-bind="text: collectionPath"></span>
+                        <span data-bind="text: collectionPath ?? '🤷'"></span>
                     </td>
                     <td>
                         <a data-bind="visible: latitude != null, text: `${latitude} ${longitude} ${accuracy != null ? `(${accuracy.toFixed(0)}m)` : ''}`, attrs: {href: `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=11/${latitude}/${longitude}`}"></a>
                         <span data-bind="visible: latitude == null">🤷</span>
                     </td>
                     <td>
-                        <span data-bind="text: new Date(time).toLocaleString()"></span>
+                        <span data-bind="text: time ? new Date(time).toLocaleString() : '🤷'"></span>
                     </td>
                 </tr>
                 <!-- /ko -->
