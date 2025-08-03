@@ -3,6 +3,8 @@ using System.Data.Common;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
+namespace MauldaschTracker;
+
 public class MauldaschTrackerService
 {
     private readonly string _connectionString;
