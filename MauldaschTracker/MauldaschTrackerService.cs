@@ -136,10 +136,10 @@ public class MauldaschTrackerService
         using var db = new SqlConnection(_connectionString);
         db.Open();
 
-        var collectionSql = "SELECT Name FROM Collection WHERE Id IN (@Ids)";
+        var collectionSql = "SELECT Name FROM Collection WHERE Id IN @Ids";
         var collectionRes = await db.QueryAsync<string>(collectionSql, new { Ids = collections });
 
-        var itemSql = "SELECT Name FROM Item WHERE Id IN (@Ids)";
+        var itemSql = "SELECT Name FROM Item WHERE Id IN @Ids";
         var itemRes = await db.QueryAsync<string>(itemSql, new { Ids = items });
         return [.. collectionRes, .. itemRes];
     }
@@ -256,7 +256,7 @@ public class MauldaschTrackerService
 
         var potentialParents = collections.ToList();
 
-        var getChildrenSql = @"SELECT DISTINCT Id FROM Collection WHERE ParentCollectionId IN (@ParentIds)";
+        var getChildrenSql = @"SELECT DISTINCT Id FROM Collection WHERE ParentCollectionId IN @ParentIds";
 
         var i = 0;
         do
