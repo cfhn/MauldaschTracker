@@ -233,7 +233,7 @@ public class MauldaschTrackerService
             toReturn.Add(new MultiTrackingResultItem(
                 item.ItemId,
                 item.ItemName,
-                item.Time,
+                item.Time.HasValue ? DateTime.SpecifyKind(item.Time.Value, DateTimeKind.Utc) : null,
                 collectionPath,
                 item.Latitude,
                 item.Longitude,
