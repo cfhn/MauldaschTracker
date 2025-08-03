@@ -2,6 +2,12 @@
 <html>
     <head>
         <meta charset="utf-8">
+        <style>
+            .id-field {
+                user-select: all;
+                font-family: 'Courier New', Courier, monospace;
+            }
+        </style>
         <script type="application/javascript" src="/knockout-3.5.1.js"></script>
         <script type="application/javascript">
             class UpdateTrackingModel {
@@ -403,7 +409,7 @@
         <script id="itemTreeItem" type="text/html">
             <li>
                 <label>
-                    <a data-bind="text: id, attr: {href: '/track?id='+id}" href="#" target="_blank"></a> | <span data-bind="text: owner"></span> | <span data-bind="text: name"></span>
+                    <a data-bind="attr: {href: '/track?id='+id}" href="#" target="_blank"><span data-bind="text: owner"></span> | <span data-bind="text: name"></span></a> | <span class="id-field" data-bind="text: id"></span>
                 </label>
             </li>
         </script>
@@ -411,7 +417,7 @@
         <script id="itemTreeCollection" type="text/html">
             <li>
                 <label>
-                    <span data-bind="text: name"></span> | <span data-bind="text: id"></span>
+                    <span data-bind="text: name"></span> | <span class="id-field" data-bind="text: id"></span>
                 </label>
                 <ul data-bind="template: { name: 'itemTreeCollection', foreach: collections }"></ul>
                 <ul data-bind="template: { name: 'itemTreeItem', foreach: items }"></ul>
