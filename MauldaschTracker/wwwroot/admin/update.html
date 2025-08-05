@@ -135,6 +135,7 @@
                         }
                         this.status('✅');
                     } catch (error) {
+                        document.getElementById('error-sound').play();
                         alert('Des glomp isch hee:\n' + error);
                     }
                 }
@@ -254,6 +255,7 @@
                         this.status('✅');
                         await resetViews();
                     } catch (error) {
+                        document.getElementById('error-sound').play();
                         alert('Des glomp isch hee:\n' + error);
                     }
                 }
@@ -274,6 +276,7 @@
                         const itemData = await response.json();
                         this.itemTree(itemData);
                     } catch (error) {
+                        document.getElementById('error-sound').play();
                         alert('Des glomp isch hee:\n' + error);
                     }
                 }
@@ -308,6 +311,7 @@
                         this.status('✅');
                         await resetViews();
                     } catch (error) {
+                        document.getElementById('error-sound').play();
                         alert('Des glomp isch hee:\n' + error);
                     }
                 }
@@ -340,6 +344,7 @@
                         item.status('✅');
                         await resetViews();
                     } catch (error) {
+                        document.getElementById('error-sound').play();
                         alert('Des glomp isch hee:\n' + error);
                     }
                 }
@@ -353,6 +358,7 @@
                     }
                     return await response.json();
                 } catch (error) {
+                    document.getElementById('error-sound').play();
                     alert('Des glomp isch hee:\n' + error);
                 }
             }
@@ -516,5 +522,9 @@
                 <!-- /ko -->
             </table>
         </form>
+
+        <audio id="error-sound" preload="auto">
+            <source src="/metal-pipe-falling.ogg" type="audio/ogg">
+        </audio>
     </body>
 </html>

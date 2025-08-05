@@ -42,6 +42,7 @@
                         this.status('✅');
                         resetViews();
                     } catch (error) {
+                        document.getElementById('error-sound').play();
                         alert('Des glomp isch hee:\n' + error);
                     }
                 }

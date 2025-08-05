@@ -59,6 +59,7 @@
                         this.selectedTarget(collectionData.id);
                         this.focus(1);
                     } catch (error) {
+                        document.getElementById('error-sound').play();
                         alert('Des glomp isch hee:\n' + error);
                     }
                 }
@@ -125,13 +126,15 @@
                         if (names == '') {
                             queueItem.text('??? -> ' + this.targetSelectorText());
                             queueItem.status('❌');
+                            document.getElementById('error-sound').play();
                         } else {
                             queueItem.text((names.join(', ') + ' -> ' + this.targetSelectorText()));
                             queueItem.status('✅');
                         }
                     } catch (error) {
-                        alert('Des glomp isch hee:\n' + error);
+                        document.getElementById('error-sound').play();
                         queueItem.status('❌');
+                        alert('Des glomp isch hee:\n' + error);
                     }
                 }
             }
@@ -154,6 +157,7 @@
                         throw new Error(`Response status: ${response.status}`);
                     }
                 } catch (error) {
+                    document.getElementById('error-sound').play();
                     alert('Des glomp isch hee:\n' + error);
                 }
             });
@@ -215,5 +219,8 @@
                 </table>
             </div>
         </form>
+        <audio id="error-sound" preload="auto">
+            <source src="/metal-pipe-falling.ogg" type="audio/ogg">
+        </audio>
     </body>
 </html>
