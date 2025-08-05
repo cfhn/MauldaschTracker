@@ -97,7 +97,9 @@
                         status: ko.observable('🤔'),
                     };
 
-                    if (this.queue.unshift(queueItem) > 3)
+                    const queueHistoryCount = 10;
+
+                    if (this.queue.unshift(queueItem) > queueHistoryCount)
                         this.queue.pop();
 
                     try {
@@ -123,7 +125,7 @@
                             throw new Error(`Response status: ${response.status}`);
                         }
                         const names = await response.json();
-                        if (names == '') {
+                        if (names.length == 0) {
                             queueItem.text('??? -> ' + this.targetSelectorText());
                             queueItem.status('❌');
                             document.getElementById('error-sound').play();

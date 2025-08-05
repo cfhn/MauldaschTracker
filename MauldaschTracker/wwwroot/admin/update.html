@@ -252,7 +252,10 @@
                         if (!response.ok) {
                             throw new Error(`Response status: ${response.status}`);
                         }
-                        this.status('✅');
+                        const names = await response.json();
+                        if(names.length == 0)
+                            throw new Error('koi Glump gfunda (IDs falsch?)');
+                        this.status(`✅ (${names.length} Glump / Gruppa umglada)`);
                         await resetViews();
                     } catch (error) {
                         document.getElementById('error-sound').play();
