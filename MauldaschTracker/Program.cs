@@ -3,6 +3,7 @@ using idunno.Authentication.Basic;
 using MauldaschTracker;
 using MauldaschTracker.PretixApi;
 using Microsoft.Extensions.FileProviders;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -142,12 +143,13 @@ app.MapPost("/api/SetPosition", async (SetPositionRequest request) =>
 .WithName("SetPosition")
 .RequireAuthorization();
 
+app.UseHttpMetrics();
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions()
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "wwwroot")),
     RequestPath = ""
 });
-
+app.MapMetrics().RequireAuthorization();
 
 app.Run("http://+:8080");
