@@ -2,6 +2,10 @@
 <html>
     <head>
         <meta charset="utf-8">
+
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
         <script type="application/javascript">
             window.addEventListener("load", async () => {
                 try {
@@ -51,6 +55,30 @@
                     }
 
                     document.getElementById('locations').replaceChildren(table);
+
+
+                    const currentPosition = itemData.resultItems.find(x => x.latitude != null && x.longitude != null);
+                    const mapElem = document.getElementById('map');
+                    const map = L.map(mapElem);
+                    L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                    }).addTo(map);
+
+                    if (currentPosition != null)
+                    {
+                        var target = L.latLng(currentPosition.latitude, currentPosition.longitude);
+
+                        map.setView(target, 10);
+
+                        L.marker(target).addTo(map);
+                    }
+
+                    var trackingPoints = itemData.resultItems
+                        .filter(x => x.latitude != null && x.longitude != null)
+                        .map(x => [x.latitude, x.longitude]);            
+  
+                    var polyline = L.polyline(trackingPoints).addTo(map);
+
                 } catch (error) {
                     alert('Des glomp isch hee:\n' + error);
                 }
@@ -80,8 +108,8 @@
                 <td>Wem g'hörts</td>
                 <td id="owner">g'lade hot</td>
             </tr>
-
         </table>
+        <div id="map" style="width: 640px; height: 480px; margin: 10px 0;"></div>
         <h2>Wo war's un wo isches</h2>
         <div id="locations"></div>
     </body>
