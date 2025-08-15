@@ -86,23 +86,23 @@
                 }
 
                 async moveItem(itemText, targetId) {
-                    const items = itemText.match(/[0-9a-z]{32}/g) ?? [];
-                    const collections = itemText.match(/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/g) ?? [];
-
-                    if([...items, ...collections].length == 0)
-                        return;
-
-                    let queueItem = {
-                        text: ko.observable([...items, ...collections].join(', ') + ' -> ' + this.targetSelectorText()),
-                        status: ko.observable('🤔'),
-                    };
-
-                    const queueHistoryCount = 10;
-
-                    if (this.queue.unshift(queueItem) > queueHistoryCount)
-                        this.queue.pop();
-
                     try {
+                        const items = itemText.match(/[0-9a-z]{32}/g) ?? [];
+                        const collections = itemText.match(/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/g) ?? [];
+
+                        if([...items, ...collections].length == 0)
+                            throw new Error('des isch koi Glump oder Gruppa');
+
+                        let queueItem = {
+                            text: ko.observable([...items, ...collections].join(', ') + ' -> ' + this.targetSelectorText()),
+                            status: ko.observable('🤔'),
+                        };
+
+                        const queueHistoryCount = 10;
+
+                        if (this.queue.unshift(queueItem) > queueHistoryCount)
+                            this.queue.pop();
+
                         if (targetId == null)
                         {
                             throw new Error('ja wo no denn?');
