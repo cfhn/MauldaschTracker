@@ -91,6 +91,11 @@
                         status: ko.observable('🤔'),
                     };
 
+                    const queueHistoryCount = 10;
+
+                    if (this.queue.unshift(queueItem) > queueHistoryCount)
+                        this.queue.pop();
+
                     try {
                         const items = itemText.match(/[0-9a-z]{32}/g) ?? [];
                         const collections = itemText.match(/^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/g) ?? [];
@@ -99,11 +104,6 @@
                             throw new Error('des isch koi Glump oder Gruppa');
 
                         queueItem.text([...items, ...collections].join(', ') + ' -> ' + this.targetSelectorText());
-
-                        const queueHistoryCount = 10;
-
-                        if (this.queue.unshift(queueItem) > queueHistoryCount)
-                            this.queue.pop();
 
                         if (targetId == null)
                         {
