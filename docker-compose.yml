@@ -1,7 +1,7 @@
 
 services:
   app:
-    image: matcher-web
+    image: mauldasch-tracker-web
     build:
       context: ./MauldaschTracker
       dockerfile: Dockerfile

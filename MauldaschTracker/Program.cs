@@ -40,12 +40,16 @@ builder.Services.AddAuthentication(BasicAuthenticationDefaults.AuthenticationSch
     });
 builder.Services.AddAuthorization();
 
-builder.Services.Configure<PretixConfig>(builder.Configuration.GetSection("PretixApi"));
 
 builder.Services.AddSingleton(x => new MauldaschTrackerService(builder.Configuration.GetConnectionString("Sql") ?? throw new ArgumentException("Missing SQL connection string")));
 
-builder.Services.AddTransient<PretixApiClient>();
-builder.Services.AddHostedService<PretixSyncService>();
+var pretixSection = builder.Configuration.GetSection("PretixApi");
+if (pretixSection.GetValue<bool>("Enabled"))
+{
+    builder.Services.Configure<PretixConfig>(pretixSection);
+    builder.Services.AddTransient<PretixApiClient>();
+    builder.Services.AddHostedService<PretixSyncService>();
+}
 
 var app = builder.Build();
 

@@ -21,7 +21,7 @@ public class PretixSyncService : IHostedService, IDisposable
     {
         await DoWork();
 
-        _timer = new Timer(x => DoWork(), null, TimeSpan.Zero,
+        _timer = new Timer(x => _ = DoWork(), null, TimeSpan.Zero,
             TimeSpan.FromMinutes(5));
     }
 
